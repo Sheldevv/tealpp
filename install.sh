@@ -8,7 +8,7 @@
 # Usage:
 #   ./install.sh                                                # defaults
 #   TPP_INSTALL_DIR=$HOME/.local ./install.sh
-#   TPP_GIT_REPO=https://github.com/me/tealpp.git ./install.sh
+#   TPP_GIT_REPO=https://github.com/Sheldevv/tealpp.git ./install.sh
 #   TPP_INSTALL_DIR=/usr/local sudo -E ./install.sh             # system-wide
 #
 # Edit the CONFIG block below to customize the defaults.
@@ -20,7 +20,7 @@ set -euo pipefail
 # ============================================================
 
 # Where to clone the source from. Any URL git accepts.
-TPP_GIT_REPO="${TPP_GIT_REPO:-https://github.com/YOUR_USERNAME/tealpp.git}"
+TPP_GIT_REPO="${TPP_GIT_REPO:-https://github.com/Sheldevv/tealpp.git}"
 
 # Branch or tag to install.
 TPP_GIT_BRANCH="${TPP_GIT_BRANCH:-main}"
