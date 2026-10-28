@@ -203,6 +203,14 @@ local commands = {
 local first = arg[1]
 if first == "--help" or first == "-h" then usage(); os.exit(0) end
 
+if first == "uninstall" then
+    local uninstaller = ROOT .. "/uninstall.sh"
+    if exists(uninstaller) then
+        os.exit(os.execute(quote(uninstaller) .. " " .. table.concat(arg, " ", 2)) and 0 or 1)
+    end
+    fail("uninstall.sh not found; run it manually from the repo")
+end
+
 if first == "test" then
     local tests = {
         "tests/run_program.lua", "tests/run_color.lua", "tests/run_gamekit.lua",
