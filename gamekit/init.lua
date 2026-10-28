@@ -1,0 +1,17 @@
+return {
+    app = require("gamekit.app"),
+    graphics = require("gamekit.graphics"),
+    assets = require("gamekit.assets"),
+    audio = require("gamekit.audio"),
+    errors = require("gamekit.errors"),
+    Scene = require("gamekit.scene"),
+    Input = require("gamekit.input"),
+    Timer = require("gamekit.timer"),
+    Love = require("gamekit.love"),
+    Lovr = require("gamekit.lovr"),
+    GUI = require("gamekit.gui"),
+    LoveGUI = require("gamekit.gui_love"),
+    Window = require("gamekit.window_love"),
+    Dock = require("gamekit.dock"),
+    Camera = require("gamekit.camera"),
+}
