@@ -14,6 +14,7 @@ Usage:
   tpp bundle <file.tpp> [options]      Stage a distributable bundle directory
   tpp package <file.tpp> [options]     Produce a distributable artifact
   tpp test                             Run the Teal++ test suite
+  tpp uninstall                        Remove the source install
 
 Options:
   -o, --output <path>   Output .tl (build/check/run/love);
@@ -22,8 +23,9 @@ Options:
   --class               Force class-definition mode
   --no-check            Skip `tl check` during build
   --name <name>         Artifact name (default: input filename stem)
-  --target <os>         linux | windows | macos (required for package)
-  --love-bin <path>     LÖVE binary (linux) or directory (windows, macos)
+  --target <os>         linux | windows | macos | web (required for package)
+  --love-bin <path>     LÖVE binary (linux) or directory (windows, macos);
+                        love.js.zip path for web
   -h, --help            Show this help
 
 Packaging:
@@ -32,6 +34,7 @@ Packaging:
   tpp package examples/showcase/main.tpp --target linux --love-bin /usr/bin/love
   tpp package examples/showcase/main.tpp --target windows --love-bin ~/love-11.4-win64
   tpp package examples/showcase/main.tpp --target macos --love-bin ~/love.app
+  tpp package examples/showcase/main.tpp --target web
 ]])
 end
 
@@ -109,8 +112,6 @@ local function directory_exists(path)
     return a == true or a == 0 or (b == "exit" and c == 0)
 end
 
--- Resolve to absolute path for zip -f, which resolves relative to CWD at
--- command-execution time, not at the time we `cd`.
 local CWD_CACHE = nil
 local function get_cwd()
     if CWD_CACHE then return CWD_CACHE end
@@ -189,6 +190,27 @@ local function ensure_gamekit(project_dir, with_runtime)
     end
 end
 
+-- Flatten a directory that contains exactly one subdirectory: move that
+-- subdir's contents up one level and remove the now-empty subdir.
+-- Returns true if anything was flattened.
+local function flatten_single_dir(path)
+    local entries = {}
+    local p = io.popen("ls -1A " .. quote(path) .. " 2>/dev/null")
+    if not p then return false end
+    for line in p:lines() do entries[#entries + 1] = line end
+    p:close()
+
+    if #entries ~= 1 then return false end
+    local inner = path .. "/" .. entries[1]
+    if not directory_exists(inner) then return false end
+
+    command_ok("mv " .. quote(inner) .. "/* " .. quote(path) .. "/ 2>/dev/null || true")
+    command_ok("mv " .. quote(inner) .. "/.[!.]* " .. quote(path) .. "/ 2>/dev/null || true")
+    command_ok("mv " .. quote(inner) .. "/..?* " .. quote(path) .. "/ 2>/dev/null || true")
+    command_ok("rmdir " .. quote(inner) .. " 2>/dev/null || true")
+    return true
+end
+
 local transpiler_path = ROOT .. "/src/tpp.lua"
 local ok, transpiler = pcall(dofile, transpiler_path)
 if not ok then
@@ -198,24 +220,27 @@ if not ok then fail("cannot load compiler source: " .. tostring(transpiler)) end
 
 local commands = {
     build = true, check = true, run = true, love = true,
-    bundle = true, package = true, test = true,
+    bundle = true, package = true, test = true, uninstall = true,
 }
 local first = arg[1]
 if first == "--help" or first == "-h" then usage(); os.exit(0) end
 
 if first == "uninstall" then
     local uninstaller = ROOT .. "/uninstall.sh"
-    if exists(uninstaller) then
-        os.exit(os.execute(quote(uninstaller) .. " " .. table.concat(arg, " ", 2)) and 0 or 1)
+    if not exists(uninstaller) then
+        fail("uninstall.sh not found; run it manually from the repo")
     end
-    fail("uninstall.sh not found; run it manually from the repo")
+    local parts = { quote(uninstaller) }
+    for i = 2, #arg do parts[#parts + 1] = quote(arg[i]) end
+    local ok_run, _, code = os.execute(table.concat(parts, " "))
+    os.exit((ok_run == true or ok_run == 0) and 0 or (code or 1))
 end
 
 if first == "test" then
     local tests = {
         "tests/run_program.lua", "tests/run_color.lua", "tests/run_gamekit.lua",
         "tests/run_gui.lua", "tests/run_window.lua", "tests/run_dock.lua",
-        "tests/run_camera.lua", "tests/run_app.lua",
+        "tests/run_camera.lua", "tests/run_app.lua", "tests/run_dataclass.lua",
     }
     for _, test in ipairs(tests) do
         local test_path = ROOT .. "/" .. test
@@ -228,14 +253,18 @@ if first == "test" then
         end
     end
 
+    local smoke_name = "_tpp_smoke"
+    local smoke_dir = ROOT .. "/build/" .. smoke_name
+    local smoke_love = ROOT .. "/build/" .. smoke_name .. ".love"
+    local smoke_dist = ROOT .. "/dist/" .. smoke_name .. "-linux"
+    local smoke_tgz = ROOT .. "/dist/" .. smoke_name .. "-linux.tar.gz"
+    local smoke_web = ROOT .. "/dist/" .. smoke_name .. "-web"
+    local smoke_web_tgz = ROOT .. "/dist/" .. smoke_name .. "-web.tar.gz"
+
     if exists(ROOT .. "/examples/hello/main.tpp") and has_command("zip") and is_file(ROOT .. "/bin/tpp") then
-        local smoke_name = "_tpp_smoke"
-        local smoke_dir = ROOT .. "/build/" .. smoke_name
-        local smoke_love = ROOT .. "/build/" .. smoke_name .. ".love"
-        local smoke_dist = ROOT .. "/dist/" .. smoke_name .. "-linux"
-        local smoke_tgz = ROOT .. "/dist/" .. smoke_name .. "-linux.tar.gz"
         os.execute("rm -rf " .. quote(smoke_dir) .. " " .. quote(smoke_love)
-            .. " " .. quote(smoke_dist) .. " " .. quote(smoke_tgz))
+            .. " " .. quote(smoke_dist) .. " " .. quote(smoke_tgz)
+            .. " " .. quote(smoke_web) .. " " .. quote(smoke_web_tgz))
 
         if not command_ok("cd " .. quote(ROOT) .. " && ./bin/tpp bundle examples/hello/main.tpp --name " .. smoke_name) then
             fail("packaging smoke test: bundle failed")
@@ -248,12 +277,31 @@ if first == "test" then
             fail("packaging smoke test: package failed")
         end
         if not exists(smoke_tgz) then fail("packaging smoke: missing " .. smoke_tgz) end
+        os.execute("rm -rf " .. quote(smoke_dist) .. " " .. quote(smoke_tgz))
+        print("OK: packaging smoke (linux)")
+    else
+        io.stderr:write("tpp: skipping linux packaging smoke test (missing example, bin/tpp, or zip)\n")
+    end
+
+    if exists(ROOT .. "/examples/hello/main.tpp")
+        and exists(ROOT .. "/love.js.zip")
+        and has_command("zip")
+        and has_command("unzip")
+        and is_file(ROOT .. "/bin/tpp") then
 
         os.execute("rm -rf " .. quote(smoke_dir) .. " " .. quote(smoke_love)
-            .. " " .. quote(smoke_dist) .. " " .. quote(smoke_tgz))
-        print("OK: packaging smoke")
+            .. " " .. quote(smoke_web) .. " " .. quote(smoke_web_tgz))
+
+        if not command_ok("cd " .. quote(ROOT) .. " && ./bin/tpp package examples/hello/main.tpp --name " .. smoke_name .. " --target web") then
+            fail("packaging smoke test: web package failed")
+        end
+        if not exists(smoke_web_tgz) then fail("packaging smoke: missing " .. smoke_web_tgz) end
+        if not exists(smoke_web .. "/game.data") then fail("packaging smoke: web bundle missing game.data") end
+        os.execute("rm -rf " .. quote(smoke_dir) .. " " .. quote(smoke_love)
+            .. " " .. quote(smoke_web) .. " " .. quote(smoke_web_tgz))
+        print("OK: packaging smoke (web)")
     else
-        io.stderr:write("tpp: skipping packaging smoke test (missing example, bin/tpp, or zip)\n")
+        io.stderr:write("tpp: skipping web packaging smoke test (need love.js.zip, zip, unzip)\n")
     end
 
     os.exit(0)
@@ -435,7 +483,7 @@ if action == "bundle" or action == "package" then
     if action == "bundle" then os.exit(0) end
 
     if not package_target then
-        fail("package requires --target <linux|windows|macos>")
+        fail("package requires --target <linux|windows|macos|web>")
     end
     if not exists(love_path) then
         fail("cannot package without .love; install zip and rerun")
@@ -561,8 +609,72 @@ if action == "bundle" or action == "package" then
         if not tar_gz_dir(dist_pkg, tgz) then fail("could not create " .. tgz) end
         artifact = tgz
 
+    elseif package_target == "web" then
+        local dist_pkg = dist_root .. "/" .. name .. "-web"
+        local tgz = dist_root .. "/" .. name .. "-web.tar.gz"
+
+        local lovejs_zip = ROOT .. "/love.js.zip"
+        if love_bin then
+            if not is_file(love_bin) then
+                fail("--love-bin for --target web must point at love.js.zip")
+            end
+            lovejs_zip = love_bin
+        end
+        if not is_file(lovejs_zip) then
+            fail("love.js.zip not found. Place it at the repo root or pass --love-bin <path>.")
+        end
+        if not has_command("unzip") then
+            fail("--target web requires 'unzip' (apt install unzip / dnf install unzip)")
+        end
+
+        if not rm_rf(dist_pkg) then fail("could not clear " .. dist_pkg) end
+        if not mkdir_p(dist_pkg) then fail("could not create " .. dist_pkg) end
+
+        if not command_ok("unzip -q " .. quote(lovejs_zip) .. " -d " .. quote(dist_pkg)) then
+            fail("could not unzip " .. lovejs_zip)
+        end
+
+        -- Handle zip that extracts into a single subdirectory (e.g. love.js/)
+        flatten_single_dir(dist_pkg)
+
+        if not exists(dist_pkg .. "/index.html") then
+            fail("love.js.zip does not contain index.html at the top level")
+        end
+        if not (exists(dist_pkg .. "/love.wasm")
+             or exists(dist_pkg .. "/love.js")
+             or exists(dist_pkg .. "/player.js")) then
+            fail("love.js.zip has no recognizable love.js runtime (love.wasm/love.js/player.js)")
+        end
+
+        -- Drop the compiled game in as game.data
+        local game_data = dist_pkg .. "/game.data"
+        if exists(game_data) then rm_rf(game_data) end
+        if not cp(love_path, game_data) then
+            fail("could not install " .. love_path .. " as game.data")
+        end
+
+        write_file(dist_pkg .. "/README.txt",
+            "Web build of " .. name .. " — serve these files over HTTP.\n\n"
+            .. "Quick test:\n"
+            .. "  python3 -m http.server 8080\n"
+            .. "  # open http://localhost:8080\n\n"
+            .. "Cannot be opened from file:// — browsers block WebAssembly\n"
+            .. "loading for security reasons.\n\n"
+            .. "Deploy: upload every file in this directory to any static host.\n"
+            .. "The game itself is game.data. Replace it to swap games.\n\n"
+            .. "If you swap in a non-compatibility love.js build, your server\n"
+            .. "must send these headers:\n"
+            .. "  Cross-Origin-Opener-Policy: same-origin\n"
+            .. "  Cross-Origin-Embedder-Policy: require-corp\n"
+            .. "The bundled love.js.zip uses compatibility mode, so it works\n"
+            .. "on itch.io and GitHub Pages without extra headers.\n")
+
+        if exists(tgz) then rm_rf(tgz) end
+        if not tar_gz_dir(dist_pkg, tgz) then fail("could not create " .. tgz) end
+        artifact = tgz
+
     else
-        fail("--target must be linux, windows, or macos")
+        fail("--target must be linux, windows, macos, or web")
     end
 
     if artifact and exists(artifact) then
