@@ -1,0 +1,3130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teal++ & TGK — The Book</title>
+<meta name="description" content="Complete documentation for Teal++, a typed Lua dialect with a LÖVE game framework (TGK).">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<link rel="icon" href="tealpp.svg" type="image/svg+xml">
+<style>
+/* ============================================================
+   THEME VARIABLES — mdBook-inspired
+   ============================================================ */
+:root {
+  --sidebar-width: 300px;
+  --content-max: 820px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Monaco, "Courier New", monospace;
+  --font-size: 16px;
+  --line-height: 1.65;
+
+  /* Light theme */
+  --bg: #ffffff;
+  --bg-sidebar: #fafafa;
+  --bg-code: #f6f7f9;
+  --bg-code-inline: #eef0f3;
+  --bg-note: #e7f3ff;
+  --bg-warn: #fff8e1;
+  --bg-tip: #e8f5e9;
+  --text: #1a1a1a;
+  --text-muted: #666;
+  --text-heading: #111;
+  --link: #0066cc;
+  --link-hover: #0052a3;
+  --border: #e1e4e8;
+  --border-strong: #d0d4d9;
+  --accent: #0066cc;
+  --accent-bg: #e7f0ff;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06);
+  --scrollbar: #c8ccd1;
+}
+
+[data-theme="dark"] {
+  --bg: #1a1d23;
+  --bg-sidebar: #15181d;
+  --bg-code: #23272e;
+  --bg-code-inline: #2a2f37;
+  --bg-note: #1e2a3a;
+  --bg-warn: #2e2718;
+  --bg-tip: #1c2a1e;
+  --text: #d4d8dd;
+  --text-muted: #8b9199;
+  --text-heading: #f0f3f7;
+  --link: #4dabf7;
+  --link-hover: #74c0fc;
+  --border: #2e333b;
+  --border-strong: #3a4049;
+  --accent: #4dabf7;
+  --accent-bg: #1e2a3a;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --scrollbar: #3a4049;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: var(--font-size);
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 1.5rem 0 3rem;
+  z-index: 100;
+  transition: transform 0.25s ease;
+}
+
+.sidebar::-webkit-scrollbar { width: 8px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 4px;
+}
+
+.sidebar-header {
+  padding: 0 1.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.sidebar-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  display: block;
+}
+
+.sidebar-title:hover { color: var(--accent); }
+
+.sidebar-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.sidebar-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+.sidebar-github:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.sidebar-github svg { flex-shrink: 0; }
+
+.search-box {
+  margin: 1rem 1.5rem;
+  width: calc(100% - 3rem);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-box:focus { border-color: var(--accent); }
+
+.nav { padding: 0 0.75rem; }
+
+.nav-part {
+  margin-top: 1.25rem;
+  padding: 0 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.nav-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  cursor: pointer;
+  border-radius: 4px;
+  user-select: none;
+  transition: background 0.1s;
+}
+
+.nav-group-title:hover { background: var(--accent-bg); }
+
+.nav-group-title .chevron {
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+  color: var(--text-muted);
+}
+
+.nav-group.collapsed .chevron { transform: rotate(-90deg); }
+.nav-group.collapsed .nav-children { display: none; }
+
+.nav-children { padding-left: 0.75rem; margin-top: 0.25rem; }
+
+.nav-link {
+  display: block;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.87rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: 4px;
+  border-left: 2px solid transparent;
+  margin-left: 0.25rem;
+  transition: all 0.1s;
+  cursor: pointer;
+}
+
+.nav-link:hover {
+  color: var(--text);
+  background: var(--accent-bg);
+}
+
+.nav-link.active {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  min-width: 0;
+}
+
+.content {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 3rem 3rem 6rem;
+}
+
+/* Topbar */
+.topbar {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+}
+
+.topbar-left { display: flex; align-items: center; gap: 1rem; }
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.breadcrumb {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.breadcrumb strong { color: var(--text-heading); }
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Typography */
+.content h1 {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-heading);
+  margin: 0 0 1rem;
+  line-height: 1.2;
+}
+
+.content h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-heading);
+  margin: 3rem 0 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.content h3 {
+  font-size: 1.2rem;
+  font-weight: 650;
+  color: var(--text-heading);
+  margin: 2rem 0 0.75rem;
+}
+
+.content h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  margin: 1.5rem 0 0.5rem;
+}
+
+.content p { margin: 0 0 1rem; }
+
+.content ul, .content ol { margin: 0 0 1rem 1.5rem; }
+.content li { margin: 0.25rem 0; }
+.content li > ul, .content li > ol { margin-top: 0.25rem; }
+
+.content a {
+  color: var(--link);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.1s;
+}
+.content a:hover { border-bottom-color: var(--link); }
+
+.content strong { font-weight: 650; color: var(--text-heading); }
+
+.content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.5rem 0;
+}
+
+/* Section anchors */
+.content h1, .content h2, .content h3, .content h4 { scroll-margin-top: 80px; }
+
+.content .anchor {
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-left: 0.5rem;
+  opacity: 0;
+  font-weight: 400;
+  transition: opacity 0.1s;
+  border: none;
+}
+
+.content h1:hover .anchor,
+.content h2:hover .anchor,
+.content h3:hover .anchor,
+.content h4:hover .anchor { opacity: 0.6; }
+
+.content .anchor:hover { opacity: 1; color: var(--accent); border: none; }
+
+/* Code */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--bg-code-inline);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  color: var(--text);
+}
+
+pre {
+  position: relative;
+  margin: 1rem 0 1.5rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-code);
+  font-size: 0.87rem;
+  line-height: 1.55;
+}
+
+pre code {
+  display: block;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  background: transparent;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+pre code::-webkit-scrollbar { height: 8px; }
+pre code::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 4px;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.7rem;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s;
+}
+
+pre:hover .copy-btn { opacity: 1; }
+.copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+.copy-btn.copied { color: #2ea043; border-color: #2ea043; }
+
+/* Callouts */
+.callout {
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  border-left: 4px solid;
+  font-size: 0.94rem;
+}
+
+.callout p:last-child { margin-bottom: 0; }
+
+.callout-title {
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.callout-note { background: var(--bg-note); border-color: #4dabf7; }
+.callout-note .callout-title { color: #1971c2; }
+[data-theme="dark"] .callout-note .callout-title { color: #74c0fc; }
+
+.callout-warn { background: var(--bg-warn); border-color: #f59f00; }
+.callout-warn .callout-title { color: #b07000; }
+[data-theme="dark"] .callout-warn .callout-title { color: #ffd43b; }
+
+.callout-tip { background: var(--bg-tip); border-color: #37b24d; }
+.callout-tip .callout-title { color: #2b8a3e; }
+[data-theme="dark"] .callout-tip .callout-title { color: #69db7c; }
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.92rem;
+}
+
+th, td {
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+th {
+  font-weight: 650;
+  color: var(--text-heading);
+  background: var(--bg-code-inline);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+tr:last-child td { border-bottom: none; }
+
+table code { font-size: 0.85em; }
+
+/* Keyboard */
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  padding: 0.15em 0.45em;
+  background: var(--bg-code-inline);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  border-bottom-width: 2px;
+  color: var(--text-heading);
+}
+
+/* Page footer nav */
+.page-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.page-nav a {
+  flex: 1;
+  padding: 0.85rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.15s;
+}
+
+.page-nav a:hover {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  border-bottom-color: var(--accent);
+}
+
+.page-nav .label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.page-nav .title { font-weight: 600; color: var(--text-heading); margin-top: 0.15rem; }
+.page-nav .next { text-align: right; }
+
+/* Chapter visibility */
+.chapter { display: none; animation: fadeIn 0.2s ease; }
+.chapter.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  padding: 0.15em 0.55em;
+  font-size: 0.72em;
+  font-weight: 600;
+  border-radius: 4px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+  margin-left: 0.4rem;
+}
+
+.badge.new { background: #e6f7e9; color: #2b8a3e; }
+[data-theme="dark"] .badge.new { background: #1c2a1e; color: #69db7c; }
+
+/* API signature block */
+.api-sig {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-code);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  margin: 0.75rem 0 1rem;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); box-shadow: 2px 0 8px rgba(0,0,0,0.15); }
+  .main { margin-left: 0; }
+  .menu-toggle { display: block; }
+  .content { padding: 2rem 1.5rem 4rem; }
+  .topbar { padding: 0.75rem 1.5rem; }
+  .content h1 { font-size: 1.8rem; }
+  .content h2 { font-size: 1.35rem; }
+}
+
+@media (max-width: 600px) {
+  .content { padding: 1.5rem 1rem 3rem; }
+  .topbar { padding: 0.6rem 1rem; }
+  .page-nav { flex-direction: column; }
+  .page-nav .next { text-align: left; }
+  table { font-size: 0.82rem; }
+  th, td { padding: 0.5rem 0.6rem; }
+}
+
+/* Print */
+@media print {
+  .sidebar, .topbar, .page-nav, .copy-btn { display: none; }
+  .main { margin-left: 0; }
+  .content { max-width: none; padding: 0; }
+  .chapter { display: block !important; page-break-after: always; }
+}
+
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 99;
+}
+.sidebar-overlay.visible { display: block; }
+
+@media (max-width: 900px) {
+  .sidebar.open ~ .sidebar-overlay { display: block; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SIDEBAR
+     ============================================================ -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <a href="#introduction" class="sidebar-title" onclick="showChapter('introduction')">Teal++ &amp; TGK</a>
+        <div class="sidebar-subtitle">The Book</div>
+        <a href="https://github.com/Sheldevv/tealpp" target="_blank" rel="noopener" class="sidebar-github">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        View on GitHub
+        </a>
+    </div>
+
+  <input type="text" id="search" class="search-box" placeholder="Search chapters…" autocomplete="off">
+
+  <div class="nav" id="nav">
+
+    <div class="nav-part">Part I — Teal++ Language</div>
+
+    <div class="nav-group">
+      <div class="nav-group-title" onclick="toggleGroup(this)">
+        <span>Getting Started</span><span class="chevron">▾</span>
+      </div>
+      <div class="nav-children">
+        <a class="nav-link" data-chapter="introduction" href="#introduction">Introduction</a>
+        <a class="nav-link" data-chapter="installation" href="#installation">Installation</a>
+        <a class="nav-link" data-chapter="hello-world" href="#hello-world">Hello, World</a>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title" onclick="toggleGroup(this)">
+        <span>Language Guide</span><span class="chevron">▾</span>
+      </div>
+      <div class="nav-children">
+        <a class="nav-link" data-chapter="program-mode" href="#program-mode">Program Mode</a>
+        <a class="nav-link" data-chapter="class-mode" href="#class-mode">Class Mode</a>
+        <a class="nav-link" data-chapter="data-classes" href="#data-classes">Data Classes <span class="badge new">new</span></a>
+        <a class="nav-link" data-chapter="imports" href="#imports">Imports</a>
+        <a class="nav-link" data-chapter="type-annotations" href="#type-annotations">Type Annotations</a>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title" onclick="toggleGroup(this)">
+        <span>CLI Reference</span><span class="chevron">▾</span>
+      </div>
+      <div class="nav-children">
+        <a class="nav-link" data-chapter="cli-overview" href="#cli-overview">Overview</a>
+        <a class="nav-link" data-chapter="cli-build" href="#cli-build">build / check / run</a>
+        <a class="nav-link" data-chapter="cli-love" href="#cli-love">love</a>
+        <a class="nav-link" data-chapter="cli-bundle" href="#cli-bundle">bundle / package</a>
+        <a class="nav-link" data-chapter="cli-test" href="#cli-test">test / uninstall</a>
+      </div>
+    </div>
+
+    <div class="nav-part">Part II — TGK Framework</div>
+
+    <div class="nav-group">
+      <div class="nav-group-title" onclick="toggleGroup(this)">
+        <span>Core</span><span class="chevron">▾</span>
+      </div>
+      <div class="nav-children">
+        <a class="nav-link" data-chapter="gamekit-app" href="#gamekit-app">GameKit.app</a>
+        <a class="nav-link" data-chapter="gamekit-graphics" href="#gamekit-graphics">GameKit.graphics</a>
+        <a class="nav-link" data-chapter="gamekit-assets" href="#gamekit-assets">GameKit.assets</a>
+        <a class="nav-link" data-chapter="gamekit-audio" href="#gamekit-audio">GameKit.audio</a>
+        <a class="nav-link" data-chapter="gamekit-errors" href="#gamekit-errors">GameKit.errors</a>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title" onclick="toggleGroup(this)">
+        <span>Systems</span><span class="chevron">▾</span>
+      </div>
+      <div class="nav-children">
+        <a class="nav-link" data-chapter="gamekit-input" href="#gamekit-input">GameKit.Input</a>
+        <a class="nav-link" data-chapter="gamekit-timer" href="#gamekit-timer">GameKit.Timer</a>
+        <a class="nav-link" data-chapter="gamekit-scene" href="#gamekit-scene">GameKit.Scene</a>
+        <a class="nav-link" data-chapter="gamekit-camera" href="#gamekit-camera">GameKit.Camera</a>
+        <a class="nav-link" data-chapter="gamekit-window" href="#gamekit-window">GameKit.Window</a>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title" onclick="toggleGroup(this)">
+        <span>UI &amp; Tools</span><span class="chevron">▾</span>
+      </div>
+      <div class="nav-children">
+        <a class="nav-link" data-chapter="gamekit-gui" href="#gamekit-gui">GameKit.GUI</a>
+        <a class="nav-link" data-chapter="gamekit-dock" href="#gamekit-dock">GameKit.Dock</a>
+      </div>
+    </div>
+
+    <div class="nav-part">Part III — Packaging</div>
+
+    <div class="nav-group">
+      <div class="nav-group-title" onclick="toggleGroup(this)">
+        <span>Distribution</span><span class="chevron">▾</span>
+      </div>
+      <div class="nav-children">
+        <a class="nav-link" data-chapter="packaging-overview" href="#packaging-overview">Overview</a>
+        <a class="nav-link" data-chapter="packaging-linux" href="#packaging-linux">Linux</a>
+        <a class="nav-link" data-chapter="packaging-windows" href="#packaging-windows">Windows</a>
+        <a class="nav-link" data-chapter="packaging-macos" href="#packaging-macos">macOS</a>
+        <a class="nav-link" data-chapter="packaging-web" href="#packaging-web">Web (love.js) <span class="badge new">new</span></a>
+      </div>
+    </div>
+
+    <div class="nav-part">Part IV — Reference</div>
+
+    <div class="nav-group">
+      <div class="nav-group-title" onclick="toggleGroup(this)">
+        <span>Reference</span><span class="chevron">▾</span>
+      </div>
+      <div class="nav-children">
+        <a class="nav-link" data-chapter="examples" href="#examples">Examples</a>
+        <a class="nav-link" data-chapter="troubleshooting" href="#troubleshooting">Troubleshooting</a>
+        <a class="nav-link" data-chapter="api-reference" href="#api-reference">API Quick Reference</a>
+        <a class="nav-link" data-chapter="compatibility" href="#compatibility">Compatibility Notes</a>
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ============================================================
+     MAIN
+     ============================================================ -->
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+      <div class="breadcrumb" id="breadcrumb"><strong>Introduction</strong></div>
+    </div>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">🌙 Dark</button>
+  </header>
+
+  <main class="content" id="content">
+
+<!-- ============================================================
+     CHAPTER: INTRODUCTION
+     ============================================================ -->
+<section class="chapter active" id="chapter-introduction">
+  <h1>Introduction<a class="anchor" href="#introduction">§</a></h1>
+
+  <p><strong>Teal++</strong> is a superset of <a href="https://teal-language.org" target="_blank" rel="noopener">Teal</a>, a statically-typed dialect of Lua, combined with <strong>TGK</strong> (Teal++ GameKit) — a game development framework built on <a href="https://love2d.org" target="_blank" rel="noopener">LÖVE</a>.</p>
+
+  <p>The pitch is simple: <em>write a game in one <code>.tpp</code> file, run one command, get a game.</em> Teal++ compiles <code>.tpp</code> → <code>.tl</code> (Teal) → <code>.lua</code>, and TGK handles the boilerplate that every LÖVE game ends up rewriting.</p>
+
+  <h2 id="what-you-get">What you get<a class="anchor" href="#what-you-get">§</a></h2>
+
+  <ul>
+    <li><strong>A language</strong> — Teal with Kotlin-style data classes, imports, and class definitions.</li>
+    <li><strong>A framework</strong> — 11 modules covering graphics, audio, assets, input, timers, scenes, GUI, cameras, windows, docking, and error reporting.</li>
+    <li><strong>A packaging pipeline</strong> — <code>tpp bundle</code> and <code>tpp package</code> for Linux, Windows, macOS, and the web.</li>
+    <li><strong>A self-contained installer</strong> — 1.4 MB Linux AppImage with Lua 5.4 and the <code>tl</code> compiler bundled.</li>
+    <li><strong>Type safety</strong> — every TGK module ships with Teal declarations; <code>tl check</code> catches errors before the game runs.</li>
+  </ul>
+
+  <h2 id="architecture">Architecture<a class="anchor" href="#architecture">§</a></h2>
+
+  <pre><code class="language-text">  main.tpp
+     │
+     │  tpp build / tpp love
+     ▼
+  main.tl          ← Teal source (type-checked)
+     │
+     │  tl check  (type check)
+     │  tl gen    (code generation)
+     ▼
+  main.lua         ← plain Lua 5.4
+     │
+     │  love .
+     ▼
+  LÖVE runtime     ← window, graphics, audio, input
+</code></pre>
+
+  <p>Teal++ is a <strong>transpiler</strong>, not an interpreter. The output is ordinary Lua that LÖVE runs directly. This means:</p>
+
+  <ul>
+    <li>You can inspect every generated <code>.lua</code> file.</li>
+    <li>You can hand-edit the Lua if you need to (though you shouldn't — edit the <code>.tpp</code> instead).</li>
+    <li>Teal's type checker runs on the intermediate <code>.tl</code>, so type errors surface before runtime.</li>
+  </ul>
+
+  <h2 id="who-this-is-for">Who this is for<a class="anchor" href="#who-this-is-for">§</a></h2>
+
+  <p>Teal++ is for people who:</p>
+
+  <ul>
+    <li>Like Lua's simplicity but want static types.</li>
+    <li>Want to ship a LÖVE game without rewriting the same lifecycle boilerplate every time.</li>
+    <li>Need a packaging pipeline that produces distributable artifacts for multiple platforms.</li>
+    <li>Are comfortable with a <code>.tpp</code> → <code>.lua</code> workflow.</li>
+  </ul>
+
+  <div class="callout callout-note">
+    <div class="callout-title">Teal++ vs. Teal</div>
+    <p>Teal++ is <em>not</em> a replacement for Teal. It's a thin layer on top that adds <code>import … as …</code>, class/data-class syntax, and TGK's runtime. Any valid Teal code is valid Teal++ (in program mode), but not vice versa.</p>
+  </div>
+
+  <h2 id="credits">Credits<a class="anchor" href="#credits">§</a></h2>
+
+  <p>Teal++ stands on the shoulders of three projects:</p>
+
+  <ul>
+    <li><a href="https://www.lua.org" target="_blank" rel="noopener"><strong>Lua 5.4</strong></a> — the runtime language.</li>
+    <li><a href="https://teal-language.org" target="_blank" rel="noopener"><strong>Teal</strong></a> — the type checker and <code>.tl</code> → <code>.lua</code> compiler.</li>
+    <li><a href="https://love2d.org" target="_blank" rel="noopener"><strong>LÖVE 11</strong></a> — the game engine TGK wraps.</li>
+  </ul>
+</section>
+
+<!-- ============================================================
+     CHAPTER: INSTALLATION
+     ============================================================ -->
+<section class="chapter" id="chapter-installation">
+  <h1>Installation<a class="anchor" href="#installation">§</a></h1>
+
+  <p>There are three ways to install Teal++ depending on your platform and how much you want bundled.</p>
+
+  <h2 id="linux-appimage">Linux — one file<a class="anchor" href="#linux-appimage">§</a></h2>
+
+  <p>The fastest path. Download the AppImage, make it executable, run it. Everything — Lua 5.4, the <code>tl</code> compiler, TGK, and the docs — is inside.</p>
+
+  <pre><code class="language-bash">wget https://github.com/Sheldevv/tealpp/releases/latest/download/tealpp-latest-x86_64.AppImage
+chmod +x tealpp-latest-x86_64.AppImage
+./tealpp-latest-x86_64.AppImage love my_game.tpp
+</code></pre>
+
+  <p>The AppImage is <strong>1.4 MB</strong> and self-contained. It works on Bazzite, Fedora, Ubuntu, Arch, Debian, NixOS — any Linux with a compatible kernel and glibc.</p>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">LÖVE is not bundled</div>
+    <p>The AppImage includes the <em>toolchain</em> (Lua, <code>tl</code>, TGK) but not LÖVE itself. Install LÖVE 11+ separately from <a href="https://love2d.org" target="_blank" rel="noopener">love2d.org</a> if you want to run games locally. Packaged games (<code>tpp package --target linux --love-bin love</code>) can bundle LÖVE if you pass the binary.</p>
+  </div>
+
+  <h2 id="install-sh">Linux / macOS — from source<a class="anchor" href="#install-sh">§</a></h2>
+
+  <p>If you prefer a source install (or you're on macOS), clone the repo and run the installer:</p>
+
+  <pre><code class="language-bash">git clone https://github.com/Sheldevv/tealpp.git
+cd tealpp
+./install.sh
+</code></pre>
+
+  <p>The installer:</p>
+
+  <ul>
+    <li>Clones the repo into a temporary directory.</li>
+    <li>Copies <code>bin/</code>, <code>src/</code>, <code>gamekit/</code>, <code>gamekit.d.tl</code>, and the docs into <code>~/.local/tpp</code>.</li>
+    <li>Writes a <code>tpp</code> wrapper to <code>~/.local/bin/tpp</code>.</li>
+    <li>Prints the exact <code>export PATH=…</code> line you need if <code>~/.local/bin</code> isn't on your <code>PATH</code>.</li>
+  </ul>
+
+  <p>Edit the config block at the top of <code>install.sh</code> to change the repo URL, branch, or install directory. Every variable can also be overridden via environment:</p>
+
+  <pre><code class="language-bash">TPP_GIT_REPO=https://github.com/Sheldevv/tealpp.git ./install.sh
+TPP_INSTALL_DIR=/usr/local sudo -E ./install.sh
+</code></pre>
+
+  <h2 id="windows-install">Windows<a class="anchor" href="#windows-install">§</a></h2>
+
+  <p>Two options:</p>
+
+  <h3 id="windows-ps1">PowerShell installer</h3>
+
+  <pre><code class="language-powershell">Set-ExecutionPolicy -Scope Process Bypass -Force
+.\install.ps1
+</code></pre>
+
+  <p>Installs to <code>%LOCALAPPDATA%\tpp</code> and places <code>tpp.cmd</code> in <code>%LOCALAPPDATA%\Microsoft\WindowsApps</code>, which is on <code>PATH</code> by default on Windows 10+.</p>
+
+  <h3 id="windows-runtime-only">Runtime only (for players)</h3>
+
+  <p>Players don't need Teal++ installed at all. Ship them a fused <code>.exe</code> produced by <code>tpp package --target windows --love-bin &lt;dir-with-love.exe&gt;</code>. They double-click and play — no dependencies, no install.</p>
+
+  <h2 id="requirements">Requirements<a class="anchor" href="#requirements">§</a></h2>
+
+  <table>
+    <thead><tr><th>Tool</th><th>Needed for</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>lua</code></td><td>Running the CLI</td><td>Bundled in the AppImage. On source installs, install Lua 5.4.</td></tr>
+      <tr><td><code>tl</code></td><td><code>tl check</code> / <code>tl gen</code></td><td>Bundled in the AppImage. On source installs: <code>luarocks install tl</code>.</td></tr>
+      <tr><td><code>love</code></td><td><code>tpp love</code>, playing games</td><td>Not bundled. Install LÖVE 11+ separately.</td></tr>
+      <tr><td><code>zip</code></td><td><code>tpp bundle</code> / <code>tpp package</code></td><td>Usually preinstalled. <code>apt install zip</code> if missing.</td></tr>
+      <tr><td><code>unzip</code></td><td><code>tpp package --target web</code></td><td>Usually preinstalled.</td></tr>
+      <tr><td><code>git</code></td><td>Installer only</td><td>Not needed at runtime.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="verifying">Verifying the install<a class="anchor" href="#verifying">§</a></h2>
+
+  <pre><code class="language-bash">tpp --help
+# Should print the Teal++ usage banner
+
+tpp test
+# Runs the full test suite — 63 assertions + two packaging smoke tests
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: HELLO WORLD
+     ============================================================ -->
+<section class="chapter" id="chapter-hello-world">
+  <h1>Hello, World<a class="anchor" href="#hello-world">§</a></h1>
+
+  <p>The smallest possible Teal++ game. Save this as <code>hello.tpp</code>:</p>
+
+  <pre><code class="language-lua">import gamekit as GameKit
+
+GameKit.app({
+    title = "hello",
+    width = 640,
+    height = 480,
+})
+
+function draw()
+    GameKit.graphics.clear("#0b0d18")
+    local w, h = GameKit.graphics.getDimensions()
+    GameKit.graphics.circle("fill", w / 2, h / 2, 48, "#15f5ff")
+end
+</code></pre>
+
+  <p>Run it:</p>
+
+  <pre><code class="language-bash">tpp love hello.tpp
+</code></pre>
+
+  <p>You should see a dark window with a cyan circle in the centre.</p>
+
+  <h2 id="what-just-happened">What just happened<a class="anchor" href="#what-just-happened">§</a></h2>
+
+  <ol>
+    <li><code>tpp love</code> detected the <code>import … as …</code> line and chose <strong>program mode</strong>.</li>
+    <li><code>compile_program</code> lowered the import to <code>local GameKit = require("gamekit")</code>.</li>
+    <li><code>tl check</code> type-checked the result against <code>gamekit.d.tl</code>.</li>
+    <li><code>tl gen</code> produced <code>hello.lua</code>.</li>
+    <li><code>love .</code> ran the game. <code>GameKit.app</code> wrapped LÖVE's lifecycle and dispatched <code>draw()</code> every frame.</li>
+  </ol>
+
+  <h2 id="adding-update">Adding an animation<a class="anchor" href="#adding-update">§</a></h2>
+
+  <p><code>GameKit.app</code> dispatches <code>update(dt)</code> if you define it. Use <code>dt</code> to move things at frame-rate-independent speeds:</p>
+
+  <pre><code class="language-lua">import gamekit as GameKit
+
+local t: number = 0.0
+
+GameKit.app({
+    title = "hello",
+    width = 640,
+    height = 480,
+})
+
+function update(dt: number)
+    t = t + dt
+end
+
+function draw()
+    GameKit.graphics.clear("#0b0d18")
+    local w, h = GameKit.graphics.getDimensions()
+    local r = 48 + math.sin(t * 2) * 12
+    GameKit.graphics.circle("fill", w / 2, h / 2, r, "#15f5ff")
+end
+</code></pre>
+
+  <p>The circle now pulses. That's the entire ceremony for a LÖVE game with Teal++.</p>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">Integers vs numbers</div>
+    <p>Notice <code>local t: number = 0.0</code> — not <code>0</code>. In Teal, <code>0</code> is inferred as <code>integer</code>, and <code>t = t + dt</code> (where <code>dt</code> is <code>number</code>) would fail. Use <code>0.0</code> for any float accumulator.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     CHAPTER: PROGRAM MODE
+     ============================================================ -->
+<section class="chapter" id="chapter-program-mode">
+  <h1>Program Mode<a class="anchor" href="#program-mode">§</a></h1>
+
+  <p>Program mode is the default for any <code>.tpp</code> file that contains an <code>import … as …</code> line. It produces a complete, runnable Lua program.</p>
+
+  <h2 id="what-program-mode-does">What program mode does<a class="anchor" href="#what-program-mode-does">§</a></h2>
+
+  <p><code>compile_program</code> (in <code>src/tpp.lua</code>) processes each line:</p>
+
+  <ul>
+    <li><code>import foo.bar as Baz</code> → <code>local Baz = require("foo.bar")</code></li>
+    <li><code>data class … end</code> blocks → transpiled inline to Teal record + methods</li>
+    <li>Everything else → passed through verbatim to Teal</li>
+  </ul>
+
+  <p>The output is a <code>.tl</code> file that Teal can type-check and compile to <code>.lua</code>.</p>
+
+  <h2 id="mode-detection">Mode detection<a class="anchor" href="#mode-detection">§</a></h2>
+
+  <p>The CLI picks the mode automatically:</p>
+
+  <table>
+    <thead><tr><th>File contains…</th><th>Mode</th></tr></thead>
+    <tbody>
+      <tr><td><code>import … as …</code></td><td>program</td></tr>
+      <tr><td><code>data class …</code> at top level</td><td>program</td></tr>
+      <tr><td>Only <code>class X … end</code></td><td>class</td></tr>
+      <tr><td>Neither</td><td>class (default)</td></tr>
+    </tbody>
+  </table>
+
+  <p>Override with <code>--program</code> or <code>--class</code>:</p>
+
+  <pre><code class="language-bash">tpp build my_file.tpp --program
+tpp build my_file.tpp --class
+</code></pre>
+
+  <h2 id="program-mode-example">Full example<a class="anchor" href="#program-mode-example">§</a></h2>
+
+  <pre><code class="language-lua">import gamekit as GameKit
+
+data class Point(x: number, y: number)
+end
+
+local player = Point.new(100, 100)
+
+GameKit.Input.bind("right", "d", "right")
+GameKit.Input.bind("left",  "a", "left")
+GameKit.Input.bind("up",    "w", "up")
+GameKit.Input.bind("down",  "s", "down")
+
+GameKit.app({
+    title = "Program mode",
+    width = 800,
+    height = 600,
+})
+
+function update(dt: number)
+    local x = player.x
+    local y = player.y
+    if GameKit.Input.down("right") then x = x + 200 * dt end
+    if GameKit.Input.down("left")  then x = x - 200 * dt end
+    if GameKit.Input.down("up")    then y = y - 200 * dt end
+    if GameKit.Input.down("down")  then y = y + 200 * dt end
+    player = Point.new(x, y)
+end
+
+function draw()
+    GameKit.graphics.clear("#0d1117")
+    GameKit.graphics.circle("fill", player.x, player.y, 20, "#22d3ee")
+end
+</code></pre>
+
+  <p>This file has an import (program mode), a data class (transpiled inline), and normal top-level code. It compiles and runs as one unit.</p>
+
+  <div class="callout callout-note">
+    <div class="callout-title">Regular classes need class mode</div>
+    <p><code>class Foo … end</code> (non-data) is still class-mode-only. If you want a class definition and game code in the same file, use a data class or split into two files (one class, one program that <code>require</code>s it).</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     CHAPTER: CLASS MODE
+     ============================================================ -->
+<section class="chapter" id="chapter-class-mode">
+  <h1>Class Mode<a class="anchor" href="#class-mode">§</a></h1>
+
+  <p>Class mode compiles a single <code>class</code> (or <code>data class</code>) definition to a Teal record + constructor + methods. The output is a Lua module you can <code>require</code> from other files.</p>
+
+  <p>Class mode is the default for files that don't contain an import and don't contain a <code>data class</code>.</p>
+
+  <h2 id="class-syntax">Syntax<a class="anchor" href="#class-syntax">§</a></h2>
+
+  <pre><code class="language-lua">class Color
+    public r: number
+    public g: number
+    public b: number
+
+    constructor(r: number, g: number, b: number)
+        self.r = r
+        self.g = g
+        self.b = b
+    end
+
+    public add(other: Color): Color
+        return Color.new(
+            self.r + other.r,
+            self.g + other.g,
+            self.b + other.b
+        )
+    end
+
+    public __add(other: Color): Color
+        return self:add(other)
+    end
+end
+</code></pre>
+
+  <h2 id="class-features">Features<a class="anchor" href="#class-features">§</a></h2>
+
+  <table>
+    <thead><tr><th>Feature</th><th>Syntax</th></tr></thead>
+    <tbody>
+      <tr><td>Fields</td><td><code>public name: type</code> / <code>private name: type</code></td></tr>
+      <tr><td>Constructor</td><td><code>constructor(params)</code></td></tr>
+      <tr><td>Auto-assignment</td><td><code>constructor(@x: number)</code> — <code>@</code> means <code>self.x = x</code></td></tr>
+      <tr><td>Methods</td><td><code>public name(params): return_type</code></td></tr>
+      <tr><td>Metamethods</td><td><code>public __add(other: Color): Color</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="compiling-a-class">Compiling a class<a class="anchor" href="#compiling-a-class">§</a></h2>
+
+  <pre><code class="language-bash">tpp build src/color.tpp
+# → src/color.tl
+# → src/color.lua
+
+# Or explicitly:
+tpp build src/color.tpp --class
+</code></pre>
+
+  <p>The generated <code>.lua</code> is a self-contained module:</p>
+
+  <pre><code class="language-lua">local Color = {}
+local Color_mt = { __index = Color, __add = ... }
+
+function Color.new(r, g, b) ... end
+function Color:add(other) ... end
+
+return Color
+</code></pre>
+
+  <p>Use it from another file with <code>require</code>:</p>
+
+  <pre><code class="language-lua">local Color = require("color")
+local c = Color.new(255, 0, 255)
+</code></pre>
+
+  <h2 id="class-mode-limits">Limits<a class="anchor" href="#class-mode-limits">§</a></h2>
+
+  <ul>
+    <li><strong>One class per file.</strong> Two <code>class</code> declarations in the same file produce an error.</li>
+    <li><strong>No top-level code.</strong> Class mode expects the whole file to be a class definition. Put test code in a separate program-mode file.</li>
+    <li><strong>No inheritance.</strong> Teal records don't support <code>extends</code>. Use composition (fields containing other class instances).</li>
+  </ul>
+</section>
+
+<!-- ============================================================
+     CHAPTER: DATA CLASSES
+     ============================================================ -->
+<section class="chapter" id="chapter-data-classes">
+  <h1>Data Classes <span class="badge new">new</span><a class="anchor" href="#data-classes">§</a></h1>
+
+  <p>Data classes are a Kotlin-inspired feature: you declare the fields once, and Teal++ generates the constructor, <code>__tostring</code>, <code>__eq</code>, and <code>copy</code> for you.</p>
+
+  <h2 id="data-class-syntax">Syntax<a class="anchor" href="#data-class-syntax">§</a></h2>
+
+  <pre><code class="language-lua">data class Point(x: number, y: number)
+    public dist(other: Point): number
+        local dx = self.x - other.x
+        local dy = self.y - other.y
+        return math.sqrt(dx * dx + dy * dy)
+    end
+end
+</code></pre>
+
+  <p>That single declaration produces:</p>
+
+  <ul>
+    <li><code>Point.new(x, y)</code> — constructor</li>
+    <li><code>self.x</code>, <code>self.y</code> — auto-assigned fields</li>
+    <li><code>__tostring</code> → <code>"Point(x=3, y=4)"</code></li>
+    <li><code>__eq</code> → structural equality (<code>a.x == b.x and a.y == b.y</code>)</li>
+    <li><code>copy()</code> → <code>Point.new(self.x, self.y)</code></li>
+    <li>Any methods you wrote in the body</li>
+  </ul>
+
+  <h2 id="data-class-usage">Usage<a class="anchor" href="#data-class-usage">§</a></h2>
+
+  <pre><code class="language-lua">local p1 = Point.new(3, 4)
+local p2 = Point.new(3, 4)
+local origin = Point.new(0, 0)
+
+print(p1)                    -- Point(x=3, y=4)
+print(p1 == p2)              -- true  (structural)
+print(p1 == origin)          -- false
+print(p1:dist(origin))       -- 5.0
+print(p1:copy() == p1)       -- true
+</code></pre>
+
+  <h2 id="data-class-overrides">Overriding generated methods<a class="anchor" href="#data-class-overrides">§</a></h2>
+
+  <p>If you define <code>__tostring</code>, <code>__eq</code>, or <code>copy</code> in the body, Teal++ uses yours instead of the generated one:</p>
+
+  <pre><code class="language-lua">data class Version(major: number, minor: number)
+    public __tostring(): string
+        return "v" .. tostring(self.major) .. "." .. tostring(self.minor)
+    end
+    -- __eq and copy are still auto-generated
+end
+</code></pre>
+
+  <h2 id="data-class-modes">Works in both modes<a class="anchor" href="#data-class-modes">§</a></h2>
+
+  <p>Data classes work in <strong>class mode</strong> (as a module) and <strong>program mode</strong> (inline in a program). In program mode, <code>compile_program</code> extracts the block, runs it through the class compiler, strips the module boilerplate, and inlines the result.</p>
+
+  <h2 id="data-class-limits">Limits<a class="anchor" href="#data-class-limits">§</a></h2>
+
+  <table>
+    <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Auto fields</td><td>✅</td></tr>
+      <tr><td>Auto constructor</td><td>✅</td></tr>
+      <tr><td>Auto <code>__tostring</code></td><td>✅</td></tr>
+      <tr><td>Auto <code>__eq</code> (shallow)</td><td>✅</td></tr>
+      <tr><td>Auto <code>copy()</code> (no args)</td><td>✅</td></tr>
+      <tr><td>Override any of the above</td><td>✅</td></tr>
+      <tr><td><code>copy(x = 5)</code> (Kotlin-style)</td><td>❌ — Teal has no optional record fields</td></tr>
+      <tr><td>Deep equality</td><td>❌ — fields compared with <code>==</code></td></tr>
+      <tr><td>Destructuring</td><td>❌ — no Lua equivalent</td></tr>
+      <tr><td><code>hashCode</code></td><td>❌ — use <code>tostring(p)</code> as a table key</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">Practical data classes for games</div>
+    <p><code>Vec2</code>, <code>Vec3</code>, <code>Color</code>, <code>Rect</code>, <code>Version</code>, and config value objects are the natural fits. Anywhere you'd otherwise write a constructor + field assignments + an equality helper by hand.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     CHAPTER: IMPORTS
+     ============================================================ -->
+<section class="chapter" id="chapter-imports">
+  <h1>Imports<a class="anchor" href="#imports">§</a></h1>
+
+  <p>Teal++ adds a single line-syntax for imports:</p>
+
+  <pre><code class="language-lua">import gamekit as GameKit
+import gamekit.camera as Camera
+</code></pre>
+
+  <p>These lower to plain <code>require</code> calls:</p>
+
+  <pre><code class="language-lua">local GameKit = require("gamekit")
+local Camera = require("gamekit.camera")
+</code></pre>
+
+  <h2 id="import-rules">Rules<a class="anchor" href="#import-rules">§</a></h2>
+
+  <ul>
+    <li>Module paths use dots: <code>foo.bar.baz</code> → <code>require("foo.bar.baz")</code>.</li>
+    <li>The alias is required. <code>import foo</code> without <code>as</code> is an error.</li>
+    <li>No relative paths, no leading/trailing dots.</li>
+    <li>Comments after imports are stripped before parsing.</li>
+  </ul>
+
+  <h2 id="import-lowering">How it works<a class="anchor" href="#import-lowering">§</a></h2>
+
+  <p><code>compile_program</code> scans line-by-line. Every line matching <code>^import … as …</code> becomes a <code>local</code> declaration. All other lines pass through unchanged. This is why program mode preserves Teal syntax — Teal++ only touches the import lines and data-class blocks.</p>
+
+  <h2 id="tgk-import">Importing TGK<a class="anchor" href="#tgk-import">§</a></h2>
+
+  <p>The TGK bundle is staged into your project directory the first time you run <code>tpp love</code> or <code>tpp run</code>:</p>
+
+  <pre><code class="language-bash">tpp love examples/showcase/main.tpp
+# cp '…/gamekit.d.tl' 'examples/showcase/gamekit.d.tl'
+# cp -R '…/gamekit' 'examples/showcase/gamekit'
+</code></pre>
+
+  <p>The staged <code>gamekit/</code> and <code>gamekit.d.tl</code> let Teal resolve <code>require("gamekit")</code> and type-check against the declarations. Existing copies are <strong>not</strong> overwritten — if you edit <code>gamekit/</code>, delete the staged copy first:</p>
+
+  <pre><code class="language-bash">rm -rf examples/my_game/gamekit examples/my_game/gamekit.d.tl
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: TYPE ANNOTATIONS
+     ============================================================ -->
+<section class="chapter" id="chapter-type-annotations">
+  <h1>Type Annotations<a class="anchor" href="#type-annotations">§</a></h1>
+
+  <p>Teal++ inherits Teal's type system. Every parameter, field, and local can carry a type annotation, and <code>tl check</code> verifies them before your game runs.</p>
+
+  <h2 id="basic-types">Basic types<a class="anchor" href="#basic-types">§</a></h2>
+
+  <pre><code class="language-lua">local count: number = 10
+local name: string = "player"
+local active: boolean = true
+local items: {string} = { "sword", "shield" }
+local cache: {string: number} = { score = 0 }
+</code></pre>
+
+  <h2 id="records">Records<a class="anchor" href="#records">§</a></h2>
+
+  <pre><code class="language-lua">local record Player
+    x: number
+    y: number
+    health: number
+    name: string
+end
+
+local p: Player = { x = 0, y = 0, health = 100, name = "hero" }
+</code></pre>
+
+  <h2 id="function-types">Function types<a class="anchor" href="#function-types">§</a></h2>
+
+  <pre><code class="language-lua">local callback: function(number): string
+local handler: function(string, number?) -- second arg optional
+</code></pre>
+
+  <h2 id="union-types">Union types<a class="anchor" href="#union-types">§</a></h2>
+
+  <pre><code class="language-lua">local target: Enemy | nil = nil
+local value: string | number = "hello"
+</code></pre>
+
+  <h2 id="narrowing">Narrowing (and its limits)<a class="anchor" href="#narrowing">§</a></h2>
+
+  <p>Teal narrows unions after <code>if not x then return end</code>, but the compiler versions vary in how aggressively they do it. If a narrowed union still errors when you access a field, cast explicitly:</p>
+
+  <pre><code class="language-lua">local target: Enemy | nil = nearest_enemy()
+if not target then return end
+
+-- If Teal refuses to narrow, cast:
+local enemy = target as Enemy
+print(enemy.x, enemy.y)
+</code></pre>
+
+  <h2 id="compiler-quirks">Compiler quirks<a class="anchor" href="#compiler-quirks">§</a></h2>
+
+  <table>
+    <thead><tr><th>Issue</th><th>Workaround</th></tr></thead>
+    <tbody>
+      <tr><td>Optional fields in records (<code>field?: type</code>) fail to parse</td><td>Use <code>any</code> for config-style records; validate at runtime</td></tr>
+      <tr><td><code>local n = 0</code> infers <code>integer</code>; adding <code>dt</code> fails</td><td>Use <code>local n = 0.0</code></td></tr>
+      <tr><td>Union not narrowed after <code>nil</code> guard</td><td>Cast with <code>x as T</code> after the guard</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================
+     CHAPTER: CLI OVERVIEW
+     ============================================================ -->
+<section class="chapter" id="chapter-cli-overview">
+  <h1>CLI Overview<a class="anchor" href="#cli-overview">§</a></h1>
+
+  <p>Every command shares the same option surface:</p>
+
+  <table>
+    <thead><tr><th>Option</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>-o, --output &lt;path&gt;</code></td><td>Output <code>.tl</code> path (build/check/run/love); output directory (bundle/package)</td></tr>
+      <tr><td><code>--program</code></td><td>Force program mode</td></tr>
+      <tr><td><code>--class</code></td><td>Force class mode</td></tr>
+      <tr><td><code>--no-check</code></td><td>Skip <code>tl check</code> during build</td></tr>
+      <tr><td><code>--name &lt;name&gt;</code></td><td>Artifact name (default: source filename stem)</td></tr>
+      <tr><td><code>--target &lt;os&gt;</code></td><td><code>linux</code> | <code>windows</code> | <code>macos</code> | <code>web</code></td></tr>
+      <tr><td><code>--love-bin &lt;path&gt;</code></td><td>LÖVE binary (linux), directory (windows), <code>love.app</code> (macos), or <code>love.js.zip</code> (web)</td></tr>
+      <tr><td><code>-h, --help</code></td><td>Show help</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="command-summary">Command summary<a class="anchor" href="#command-summary">§</a></h2>
+
+  <table>
+    <thead><tr><th>Command</th><th>Produces</th></tr></thead>
+    <tbody>
+      <tr><td><code>tpp build &lt;file&gt;</code></td><td><code>.tl</code> + <code>.lua</code></td></tr>
+      <tr><td><code>tpp check &lt;file&gt;</code></td><td>type-check only, no output</td></tr>
+      <tr><td><code>tpp run &lt;file&gt;</code></td><td>compile + run with <code>lua</code></td></tr>
+      <tr><td><code>tpp love &lt;file&gt;</code></td><td>compile + run with <code>love</code></td></tr>
+      <tr><td><code>tpp bundle &lt;file&gt;</code></td><td><code>build/&lt;name&gt;/</code>, <code>build/&lt;name&gt;.love</code>, launcher script</td></tr>
+      <tr><td><code>tpp package &lt;file&gt; --target &lt;os&gt;</code></td><td>distributable artifact</td></tr>
+      <tr><td><code>tpp test</code></td><td>runs the full test suite</td></tr>
+      <tr><td><code>tpp uninstall</code></td><td>removes the source install</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================
+     CHAPTER: CLI BUILD
+     ============================================================ -->
+<section class="chapter" id="chapter-cli-build">
+  <h1>build / check / run<a class="anchor" href="#cli-build">§</a></h1>
+
+  <h2 id="build"><code>tpp build</code><a class="anchor" href="#build">§</a></h2>
+
+  <p>Compiles <code>.tpp</code> → <code>.tl</code>, runs <code>tl check</code>, then <code>tl gen</code> → <code>.lua</code>.</p>
+
+  <pre><code class="language-bash">tpp build examples/showcase/main.tpp
+# Generated examples/showcase/main.tl (program mode)
+# Type checked main.tl — 0 errors
+# Wrote: main.lua
+</code></pre>
+
+  <p>Add <code>--no-check</code> to skip the type-check step (useful when iterating fast on a file with known warnings):</p>
+
+  <pre><code class="language-bash">tpp build main.tpp --no-check
+</code></pre>
+
+  <h2 id="check"><code>tpp check</code><a class="anchor" href="#check">§</a></h2>
+
+  <p>Type-check only. No <code>.lua</code> output. Faster than <code>build</code> when you just want to confirm types:</p>
+
+  <pre><code class="language-bash">tpp check main.tpp
+# Check passed: main.tl
+</code></pre>
+
+  <h2 id="run"><code>tpp run</code><a class="anchor" href="#run">§</a></h2>
+
+  <p>Compiles and runs the resulting Lua with the system <code>lua</code>. Useful for non-LÖVE tools, tests, or scripts:</p>
+
+  <pre><code class="language-bash">tpp run examples/dataclass/main.tpp
+# Point(x=3, y=4)
+# true
+# false
+# 5.0
+# …
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: CLI LOVE
+     ============================================================ -->
+<section class="chapter" id="chapter-cli-love">
+  <h1>love<a class="anchor" href="#cli-love">§</a></h1>
+
+  <p>Compiles and launches a LÖVE game. The dev-loop command.</p>
+
+  <pre><code class="language-bash">tpp love examples/showcase/main.tpp
+</code></pre>
+
+  <p>What it does:</p>
+
+  <ol>
+    <li>Detects program mode (because of the <code>import</code>).</li>
+    <li>Lowers imports, transpiles data classes.</li>
+    <li><code>tl check</code> → <code>tl gen</code> → <code>main.lua</code>.</li>
+    <li>Stages <code>gamekit/</code> and <code>gamekit.d.tl</code> into the project directory if missing.</li>
+    <li>Runs <code>love &lt;project_dir&gt;</code>.</li>
+  </ol>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">Staged GameKit copies</div>
+    <p><code>gamekit/</code> is copied into the project directory <strong>only if it doesn't already exist</strong>. If you edit <code>gamekit/</code> in the repo, run <code>rm -rf examples/my_game/gamekit examples/my_game/gamekit.d.tl</code> before <code>tpp love</code> to pick up the changes.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     CHAPTER: CLI BUNDLE
+     ============================================================ -->
+<section class="chapter" id="chapter-cli-bundle">
+  <h1>bundle / package<a class="anchor" href="#cli-bundle">§</a></h1>
+
+  <h2 id="bundle"><code>tpp bundle</code><a class="anchor" href="#bundle">§</a></h2>
+
+  <p>Stages a distributable bundle: a directory with <code>main.lua</code>, <code>assets/</code>, <code>gamekit/</code>, plus a <code>.love</code> zip and a launcher script.</p>
+
+  <pre><code class="language-bash">tpp bundle examples/showcase/main.tpp
+# Bundled:  ./build/main.love
+# Launcher: ./build/main.sh
+# Staging:  ./build/main
+</code></pre>
+
+  <p>Use <code>--name showcase</code> to name the artifact differently from the source:</p>
+
+  <pre><code class="language-bash">tpp bundle examples/showcase/main.tpp --name showcase
+# → build/showcase.love
+# → build/showcase.sh
+# → build/showcase/
+</code></pre>
+
+  <h2 id="package"><code>tpp package</code><a class="anchor" href="#package">§</a></h2>
+
+  <p>Produces a distributable artifact. Requires <code>--target</code>.</p>
+
+  <pre><code class="language-bash">tpp package main.tpp --target linux
+tpp package main.tpp --target linux --love-bin /usr/bin/love
+tpp package main.tpp --target windows --love-bin ~/love-11.4-win64
+tpp package main.tpp --target macos --love-bin ~/love.app
+tpp package main.tpp --target web
+</code></pre>
+
+  <table>
+    <thead><tr><th>Target</th><th>Output</th><th>Bundles LÖVE?</th></tr></thead>
+    <tbody>
+      <tr><td>linux</td><td><code>dist/&lt;name&gt;-linux.tar.gz</code></td><td>Yes, with <code>--love-bin &lt;binary&gt;</code></td></tr>
+      <tr><td>windows</td><td><code>dist/&lt;name&gt;-windows.zip</code></td><td>Yes, with <code>--love-bin &lt;dir-with-love.exe&gt;</code></td></tr>
+      <tr><td>macos</td><td><code>dist/&lt;name&gt;-macos.tar.gz</code></td><td>Yes, with <code>--love-bin love.app</code></td></tr>
+      <tr><td>web</td><td><code>dist/&lt;name&gt;-web.tar.gz</code></td><td>love.js player included</td></tr>
+    </tbody>
+  </table>
+
+  <p>See <a href="#packaging-overview" onclick="showChapter('packaging-overview')">Packaging</a> for details.</p>
+</section>
+
+<!-- ============================================================
+     CHAPTER: CLI TEST
+     ============================================================ -->
+<section class="chapter" id="chapter-cli-test">
+  <h1>test / uninstall<a class="anchor" href="#cli-test">§</a></h1>
+
+  <h2 id="test"><code>tpp test</code><a class="anchor" href="#test">§</a></h2>
+
+  <p>Runs the full suite:</p>
+
+  <ul>
+    <li>6 Teal++ program/import checks</li>
+    <li>9 GameKit core tests (scene, input, timer)</li>
+    <li>26 GUI tests</li>
+    <li>7 window management tests</li>
+    <li>6 dock panel tests</li>
+    <li>5 camera math tests</li>
+    <li>12 <code>GameKit.app</code> tests</li>
+    <li>10 data class tests</li>
+    <li>Packaging smoke tests (Linux + web)</li>
+  </ul>
+
+  <pre><code class="language-bash">tpp test
+# … 63 assertions + OK: packaging smoke (linux) + OK: packaging smoke (web)
+</code></pre>
+
+  <h2 id="uninstall"><code>tpp uninstall</code><a class="anchor" href="#uninstall">§</a></h2>
+
+  <p>Removes the source install created by <code>install.sh</code>. It never touches your game projects or system packages:</p>
+
+  <pre><code class="language-bash">tpp uninstall          # prompts
+tpp uninstall --yes    # no prompt
+</code></pre>
+
+  <p>The AppImage does not need uninstalling — just delete the file.</p>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT APP
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-app">
+  <h1>GameKit.app<a class="anchor" href="#gamekit-app">§</a></h1>
+
+  <p>Zero-boilerplate application entry point. Opens a window, wires LÖVE's lifecycle, and dispatches to your callbacks.</p>
+
+  <h2 id="app-signature">Signature<a class="anchor" href="#app-signature">§</a></h2>
+
+  <div class="api-sig">GameKit.app(config: table): AppHandle</div>
+
+  <h2 id="app-config">Configuration<a class="anchor" href="#app-config">§</a></h2>
+
+  <table>
+    <thead><tr><th>Key</th><th>Type</th><th>Default</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>title</code></td><td>string</td><td><code>"TGK Game"</code></td><td>Window title</td></tr>
+      <tr><td><code>width</code></td><td>integer</td><td><code>800</code></td><td>Window width</td></tr>
+      <tr><td><code>height</code></td><td>integer</td><td><code>600</code></td><td>Window height</td></tr>
+      <tr><td><code>resizable</code></td><td>boolean</td><td><code>true</code></td><td>Window resize</td></tr>
+      <tr><td><code>vsync</code></td><td>integer</td><td><code>1</code></td><td>0 = off, 1 = on</td></tr>
+      <tr><td><code>background</code></td><td>string | table</td><td><code>{0.02,0.03,0.06,1}</code></td><td>Hex or RGBA table</td></tr>
+      <tr><td><code>clearOnDraw</code></td><td>boolean</td><td><code>true</code></td><td>Auto-clear each frame</td></tr>
+      <tr><td><code>gui</code></td><td>UI</td><td>nil</td><td>Auto-attaches <code>LoveGUI.attach</code></td></tr>
+      <tr><td><code>gui_draw</code></td><td>boolean</td><td><code>true</code></td><td>Auto-draw GUI after user <code>draw</code></td></tr>
+      <tr><td><code>gui_renderer</code></td><td>Renderer</td><td>nil</td><td>Custom renderer (default: <code>LoveGUI.new()</code>)</td></tr>
+      <tr><td><code>on_error</code></td><td>function</td><td>nil</td><td>Error handler</td></tr>
+      <tr><td><code>load</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>update</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>draw</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>keypressed</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>keyreleased</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>mousepressed</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>mousereleased</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>mousemoved</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>wheelmoved</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>textinput</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>resize</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>focus</code></td><td>function</td><td>nil</td><td>Lifecycle callback</td></tr>
+      <tr><td><code>quit</code></td><td>function</td><td>nil</td><td>Return <code>true</code> to allow quit</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="app-callbacks">Callbacks and dispatch<a class="anchor" href="#app-callbacks">§</a></h2>
+
+  <p>Every callback can be provided <strong>either</strong> in the config table <strong>or</strong> as a top-level global function:</p>
+
+  <pre><code class="language-lua">-- Config style
+GameKit.app({
+    update = function(dt) end,
+    draw = function() end,
+})
+
+-- Global style (identical result)
+GameKit.app({})
+function update(dt: number) end
+function draw() end
+</code></pre>
+
+  <p>Config wins if both are present. Global dispatch only fires for functions you actually defined — Lua builtins (like <code>load</code>, <code>print</code>) are never called accidentally.</p>
+
+  <h2 id="app-gui">GUI auto-wiring<a class="anchor" href="#app-gui">§</a></h2>
+
+  <p>Pass a <code>UI</code> instance as <code>gui</code> and GameKit.app handles the rest:</p>
+
+  <pre><code class="language-lua">local ui = GameKit.GUI.new({ x = 20, y = 20, w = 240 })
+ui:label("score: 0")
+ui:button("Click", function() end)
+
+GameKit.app({ gui = ui })
+</code></pre>
+
+  <p>Auto-attached:</p>
+
+  <ul>
+    <li><code>LoveGUI.attach(ui)</code> — mouse, keyboard, textinput, wheel, focus</li>
+    <li><code>ui:update(dt)</code> each frame</li>
+    <li><code>ui:draw(renderer)</code> after your <code>draw</code></li>
+  </ul>
+
+  <p>To disable auto-draw (composite manually): <code>gui_draw = false</code>. To use a custom renderer: <code>gui_renderer = my_renderer</code>.</p>
+
+  <h2 id="app-errors">Error handling<a class="anchor" href="#app-errors">§</a></h2>
+
+  <p>Every callback is <code>pcall</code>-wrapped. A thrown error logs a traceback and the game keeps running:</p>
+
+  <pre><code class="language-lua">GameKit.app({
+    on_error = function(traceback, err)
+        print("oops:", traceback)
+    end,
+})
+</code></pre>
+
+  <h2 id="app-handle">Return value<a class="anchor" href="#app-handle">§</a></h2>
+
+  <p><code>GameKit.app</code> returns an <code>AppHandle</code> with two methods:</p>
+
+  <pre><code class="language-lua">local app = GameKit.app({})
+app:onError(function(tb) end)  -- replace the error handler
+app:stop()                     -- request LÖVE quit
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT GRAPHICS
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-graphics">
+  <h1>GameKit.graphics<a class="anchor" href="#gamekit-graphics">§</a></h1>
+
+  <p>Hex-color-friendly wrapper over <code>love.graphics</code>. Every drawing call accepts a color as the last argument.</p>
+
+  <h2 id="graphics-colors">Colors<a class="anchor" href="#graphics-colors">§</a></h2>
+
+  <p>Three forms accepted everywhere a color is expected:</p>
+
+  <ul>
+    <li><code>"#rrggbb"</code> — hex string</li>
+    <li><code>"#rrggbbaa"</code> — hex string with alpha</li>
+    <li><code>{ r, g, b, a? }</code> — table, components 0..1</li>
+  </ul>
+
+  <pre><code class="language-lua">GameKit.graphics.circle("fill", 100, 100, 20, "#15f5ff")
+GameKit.graphics.circle("fill", 100, 100, 20, "#15f5ffcc")  -- semi-transparent
+GameKit.graphics.circle("fill", 100, 100, 20, {0.08, 0.96, 1, 1})
+</code></pre>
+
+  <h2 id="graphics-api">API<a class="anchor" href="#graphics-api">§</a></h2>
+
+  <div class="api-sig">GameKit.graphics.clear(color?)
+GameKit.graphics.setColor(color)
+GameKit.graphics.circle(mode, x, y, radius, color?, segments?)
+GameKit.graphics.rectangle(mode, x, y, w, h, color?)
+GameKit.graphics.line(x1, y1, x2, y2, color?)
+GameKit.graphics.print(text, x?, y?, color?)
+GameKit.graphics.image(img, x, y, r?, sx?, sy?)
+GameKit.graphics.polygon(mode, color, ...)
+GameKit.graphics.ellipse(mode, x, y, rx, ry, color?, segments?)
+GameKit.graphics.arc(mode, x, y, r, a1, a2, color?, segments?)
+GameKit.graphics.getDimensions(): number, number
+GameKit.graphics.setFont(font)
+GameKit.graphics.setLineWidth(w)
+GameKit.graphics.push()
+GameKit.graphics.pop()
+GameKit.graphics.translate(x, y)
+GameKit.graphics.scale(sx, sy?)
+GameKit.graphics.rotate(radians)
+GameKit.graphics.reset()
+GameKit.graphics.raw(): love.graphics</div>
+
+  <h2 id="graphics-example">Example<a class="anchor" href="#graphics-example">§</a></h2>
+
+  <pre><code class="language-lua">function draw()
+    GameKit.graphics.clear("#0b0d18")
+
+    local w, h = GameKit.graphics.getDimensions()
+    GameKit.graphics.circle("fill", w/2, h/2, 48, "#15f5ff")
+    GameKit.graphics.rectangle("line", 20, 20, 200, 40, "#ffffff")
+    GameKit.graphics.print("score: 0", 20, 100, "#c0c0d0")
+end
+</code></pre>
+
+  <h2 id="graphics-raw">Accessing raw LÖVE<a class="anchor" href="#graphics-raw">§</a></h2>
+
+  <p>For anything not wrapped, use <code>raw()</code>:</p>
+
+  <pre><code class="language-lua">local lg = GameKit.graphics.raw()
+lg.setBlendMode("add")
+lg.draw(my_mesh, 0, 0)
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT ASSETS
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-assets">
+  <h1>GameKit.assets<a class="anchor" href="#gamekit-assets">§</a></h1>
+
+  <p>Asset loader with caching. Missing files log a warning and return <code>nil</code> — the game degrades gracefully instead of crashing on startup.</p>
+
+  <h2 id="assets-api">API<a class="anchor" href="#assets-api">§</a></h2>
+
+  <div class="api-sig">GameKit.assets.image(path): Image?
+GameKit.assets.font(path_or_size, size?): Font?
+GameKit.assets.sound(path): Source?
+GameKit.assets.music(path): Source?
+GameKit.assets.clear()</div>
+
+  <h2 id="assets-usage">Usage<a class="anchor" href="#assets-usage">§</a></h2>
+
+  <pre><code class="language-lua">local player = GameKit.assets.image("assets/player.png")
+local ui_font = GameKit.assets.font("assets/ui.ttf", 18)
+local beep = GameKit.assets.sound("assets/beep.wav")
+local music = GameKit.assets.music("assets/theme.ogg")
+
+-- Shorthand: default font at a size
+local big = GameKit.assets.font(32)
+
+-- Missing files return nil
+if player then
+    GameKit.graphics.image(player, x, y)
+end
+</code></pre>
+
+  <h2 id="assets-cache">Caching<a class="anchor" href="#assets-cache">§</a></h2>
+
+  <p>Every call caches by path. Repeated <code>Assets.image("player.png")</code> returns the same Image instance. Missing files also cache their failure, so you don't spam the console every frame.</p>
+
+  <h2 id="assets-clear">Clearing<a class="anchor" href="#assets-clear">§</a></h2>
+
+  <p><code>Assets.clear()</code> drops the entire cache. Use between scenes if memory is tight.</p>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">Design philosophy</div>
+    <p>Missing assets should never be a fatal error in a game. A missing <code>beep.wav</code> means no sound — not a crash. <code>Assets.*</code> returns <code>nil</code>, logs once, and lets the game continue.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT AUDIO
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-audio">
+  <h1>GameKit.audio<a class="anchor" href="#gamekit-audio">§</a></h1>
+
+  <p>Sound playback with fades. Master volume uses LÖVE's built-in master so it affects everything currently playing.</p>
+
+  <h2 id="audio-api">API<a class="anchor" href="#audio-api">§</a></h2>
+
+  <div class="api-sig">GameKit.audio.play(sound, volume?, pitch?): Source?
+GameKit.audio.playMusic(sound, volume?)
+GameKit.audio.stopMusic()
+GameKit.audio.stopAll()
+GameKit.audio.setMasterVolume(v)
+GameKit.audio.fadeIn(source, duration, target?)
+GameKit.audio.fadeOut(source, duration, on_complete?)
+GameKit.audio.update(dt)</div>
+
+  <h2 id="audio-usage">Usage<a class="anchor" href="#audio-usage">§</a></h2>
+
+  <pre><code class="language-lua">local beep = GameKit.assets.sound("assets/beep.wav")
+local music = GameKit.assets.music("assets/theme.ogg")
+
+GameKit.audio.play(beep, 0.6)
+GameKit.audio.playMusic(music, 0.4)
+GameKit.audio.setMasterVolume(0.8)
+GameKit.audio.fadeOut(music, 2.0)
+</code></pre>
+
+  <h2 id="audio-fades">Fades<a class="anchor" href="#audio-fades">§</a></h2>
+
+  <p><code>fadeIn</code> / <code>fadeOut</code> schedule a volume ramp. The ramp is updated by <code>Audio.update(dt)</code>, which <code>GameKit.app</code> calls automatically each frame.</p>
+
+  <pre><code class="language-lua">GameKit.audio.fadeIn(music, 1.5)       -- ramp up over 1.5s
+GameKit.audio.fadeOut(music, 2.0, function()
+    print("music ended")
+end)
+</code></pre>
+
+  <div class="callout callout-note">
+    <div class="callout-title">Web builds</div>
+    <p>In compatibility-mode love.js (the bundled <code>love.js.zip</code>), audio may require a user click on the canvas before it starts. This is a browser autoplay policy, not a TGK limitation.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT ERRORS
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-errors">
+  <h1>GameKit.errors<a class="anchor" href="#gamekit-errors">§</a></h1>
+
+  <p>Uniform error reporting. Used by <code>GameKit.app</code> internally; available for your own code.</p>
+
+  <h2 id="errors-api">API<a class="anchor" href="#errors-api">§</a></h2>
+
+  <div class="api-sig">GameKit.errors.traceback(err): string
+GameKit.errors.guard(fn, on_error?, label?): function
+GameKit.errors.fail(msg)
+GameKit.errors.assert(cond, msg?): any</div>
+
+  <h2 id="errors-traceback">traceback<a class="anchor" href="#errors-traceback">§</a></h2>
+
+  <p>Returns the error message plus a stack trace, when the runtime supports it:</p>
+
+  <pre><code class="language-lua">local ok, err = pcall(risky_function)
+if not ok then
+    io.stderr:write(GameKit.errors.traceback(err) .. "\n")
+end
+</code></pre>
+
+  <h2 id="errors-guard">guard<a class="anchor" href="#errors-guard">§</a></h2>
+
+  <p>Wraps a callback so a thrown error is caught and routed to <code>on_error</code>:</p>
+
+  <pre><code class="language-lua">local safe_update = GameKit.errors.guard(
+    function(dt) my_update(dt) end,
+    function(traceback) print(traceback) end,
+    "update"
+)
+</code></pre>
+
+  <h2 id="errors-fail">fail / assert<a class="anchor" href="#errors-fail">§</a></h2>
+
+  <p>Prefixed error and assertion helpers:</p>
+
+  <pre><code class="language-lua">GameKit.errors.assert(score >= 0, "score must not be negative")
+GameKit.errors.fail("unreachable code")
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT INPUT
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-input">
+  <h1>GameKit.Input<a class="anchor" href="#gamekit-input">§</a></h1>
+
+  <p>Action-based input bindings. Bind multiple physical sources to one named action, then query the action.</p>
+
+  <h2 id="input-api">API<a class="anchor" href="#input-api">§</a></h2>
+
+  <div class="api-sig">GameKit.Input.bind(action, ...sources)
+GameKit.Input.unbind(action)
+GameKit.Input.down(action): boolean
+GameKit.Input.pressed(action): boolean
+GameKit.Input.released(action): boolean
+GameKit.Input.mousePosition(): number, number
+GameKit.Input.mouseDown(button?): boolean
+GameKit.Input.releaseAll()
+GameKit.Input.reset()</div>
+
+  <h2 id="input-bindings">Bindings<a class="anchor" href="#input-bindings">§</a></h2>
+
+  <pre><code class="language-lua">GameKit.Input.bind("jump", "space", "j")
+GameKit.Input.bind("fire", "mouse:1")
+GameKit.Input.bind("left", "a", "left")
+GameKit.Input.bind("right", "d", "right")
+</code></pre>
+
+  <p>Sources are keyboard key names (<code>"w"</code>, <code>"space"</code>, <code>"left"</code>) or <code>"mouse:N"</code> where N is the button number (1 = left, 2 = right, 3 = middle).</p>
+
+  <h2 id="input-query">Querying<a class="anchor" href="#input-query">§</a></h2>
+
+  <pre><code class="language-lua">function update(dt: number)
+    if GameKit.Input.down("left") then
+        player.x = player.x - 200 * dt
+    end
+
+    if GameKit.Input.pressed("jump") then
+        player.vy = -400     -- fires once per press
+    end
+
+    if GameKit.Input.released("fire") then
+        print("stopped firing")
+    end
+end
+</code></pre>
+
+  <h2 id="input-mouse">Mouse<a class="anchor" href="#input-mouse">§</a></h2>
+
+  <pre><code class="language-lua">local mx, my = GameKit.Input.mousePosition()
+
+if GameKit.Input.mouseDown(1) then
+    -- left button held
+end
+</code></pre>
+
+  <h2 id="input-lifecycle">Lifecycle<a class="anchor" href="#input-lifecycle">§</a></h2>
+
+  <p><code>GameKit.app</code> wires keyboard and mouse events into <code>Input</code> automatically. When the window loses focus, <code>Input.releaseAll()</code> clears held state so keys don't "stick".</p>
+
+  <p><code>pressed</code> and <code>released</code> are one-frame flags — cleared by <code>Input.endFrame()</code> after your <code>update</code>.</p>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT TIMER
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-timer">
+  <h1>GameKit.Timer<a class="anchor" href="#gamekit-timer">§</a></h1>
+
+  <p>One-shot and repeating timers with cancellation.</p>
+
+  <h2 id="timer-api">API<a class="anchor" href="#timer-api">§</a></h2>
+
+  <div class="api-sig">GameKit.Timer.after(delay, callback): id
+GameKit.Timer.every(interval, callback, repetitions?): id
+GameKit.Timer.cancel(id): boolean
+GameKit.Timer.clear()
+GameKit.Timer.update(dt)</div>
+
+  <h2 id="timer-usage">Usage<a class="anchor" href="#timer-usage">§</a></h2>
+
+  <pre><code class="language-lua">-- One-shot
+GameKit.Timer.after(2.0, function()
+    print("two seconds later")
+end)
+
+-- Repeating, 5 times
+local id = GameKit.Timer.every(0.5, function()
+    spawn_enemy()
+end, 5)
+
+-- Cancel
+GameKit.Timer.cancel(id)
+</code></pre>
+
+  <h2 id="timer-lifecycle">Lifecycle<a class="anchor" href="#timer-lifecycle">§</a></h2>
+
+  <p><code>GameKit.app</code> calls <code>Timer.update(dt)</code> every frame before your <code>update</code>. Callback-created timers start firing on the next <code>update</code> (not the current one), preventing infinite loops.</p>
+
+  <p>Timers have catch-up protection: if the game is paused for a long time, they don't fire thousands of times to catch up.</p>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT SCENE
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-scene">
+  <h1>GameKit.Scene<a class="anchor" href="#gamekit-scene">§</a></h1>
+
+  <p>Single-active-scene lifecycle. Scenes are tables with optional <code>enter</code>, <code>leave</code>, <code>update</code>, and <code>draw</code> methods.</p>
+
+  <h2 id="scene-api">API<a class="anchor" href="#scene-api">§</a></h2>
+
+  <div class="api-sig">GameKit.Scene.switch(next_scene?)
+GameKit.Scene.current(): any
+GameKit.Scene.update(dt)
+GameKit.Scene.draw(...)
+GameKit.Scene.reset()</div>
+
+  <h2 id="scene-example">Example<a class="anchor" href="#scene-example">§</a></h2>
+
+  <pre><code class="language-lua">local menu = {}
+
+function menu:enter(previous)
+    print("entered menu from", previous)
+end
+
+function menu:update(dt: number)
+    if GameKit.Input.pressed("jump") then
+        GameKit.Scene.switch(game_scene)
+    end
+end
+
+function menu:draw()
+    GameKit.graphics.print("Press Space", 100, 100, "#ffffff")
+end
+
+GameKit.Scene.switch(menu)
+</code></pre>
+
+  <p><code>GameKit.app</code> calls <code>Scene.update</code> and <code>Scene.draw</code> automatically. Your <code>update</code> / <code>draw</code> callbacks run <em>after</em> the active scene.</p>
+
+  <h2 id="scene-transitions">Transitions<a class="anchor" href="#scene-transitions">§</a></h2>
+
+  <p><code>Scene.switch</code> calls <code>previous:leave(next)</code> then <code>next:enter(previous)</code>. Switching to the current scene is a no-op.</p>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT CAMERA
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-camera">
+  <h1>GameKit.Camera<a class="anchor" href="#gamekit-camera">§</a></h1>
+
+  <p>2D camera with world/screen coordinate conversion, rotation, and cursor-centered zoom.</p>
+
+  <h2 id="camera-api">API<a class="anchor" href="#camera-api">§</a></h2>
+
+  <div class="api-sig">local cam = GameKit.Camera.new({ x?, y?, zoom?, rotation?, width?, height? })
+
+cam:setPosition(x, y)
+cam:move(dx, dy)
+cam:setZoom(zoom, screen_x?, screen_y?)
+cam:zoomBy(factor, screen_x?, screen_y?)
+cam:setRotation(radians)
+cam:setViewport(x, y, w, h)
+cam:worldToScreen(x, y): number, number
+cam:screenToWorld(x, y): number, number
+cam:containsScreenPoint(x, y): boolean
+cam:getVisibleWorldBounds(): number, number, number, number
+cam:attachLove()
+cam:detachLove()</div>
+
+  <h2 id="camera-usage">Usage<a class="anchor" href="#camera-usage">§</a></h2>
+
+  <pre><code class="language-lua">local cam = GameKit.Camera.new({ width = 800, height = 600 })
+
+function update(dt: number)
+    if GameKit.Input.down("right") then
+        cam:move(200 * dt, 0)
+    end
+end
+
+function draw()
+    cam:attachLove()
+    -- draw world objects here (affected by camera)
+    GameKit.graphics.circle("fill", 0, 0, 20, "#ffffff")
+    cam:detachLove()
+
+    -- draw HUD here (not affected by camera)
+    GameKit.graphics.print("score: 0", 20, 20, "#ffffff")
+end
+</code></pre>
+
+  <h2 id="camera-zoom">Cursor-centered zoom<a class="anchor" href="#camera-zoom">§</a></h2>
+
+  <pre><code class="language-lua">function wheelmoved(x: number, y: number)
+    local mx, my = GameKit.Input.mousePosition()
+    cam:zoomBy(1 + y * 0.1, mx, my)
+end
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT WINDOW
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-window">
+  <h1>GameKit.Window<a class="anchor" href="#gamekit-window">§</a></h1>
+
+  <p>Window control — size, title, fullscreen, VSync, resize callbacks. LÖVE backend.</p>
+
+  <h2 id="window-api">API<a class="anchor" href="#window-api">§</a></h2>
+
+  <div class="api-sig">GameKit.Window.getSize(): number, number
+GameKit.Window.setSize(width, height)
+GameKit.Window.setTitle(title)
+GameKit.Window.setResizable(resizable)
+GameKit.Window.setMinSize(width, height)
+GameKit.Window.setFullscreen(enabled, mode?)
+GameKit.Window.toggleFullscreen(mode?): boolean
+GameKit.Window.setBorderless(enabled)
+GameKit.Window.isFullscreen(): boolean
+GameKit.Window.setVSync(value)
+GameKit.Window.configure(options)</div>
+
+  <h2 id="window-usage">Usage<a class="anchor" href="#window-usage">§</a></h2>
+
+  <pre><code class="language-lua">GameKit.Window.setTitle("My Game")
+GameKit.Window.setSize(1280, 720)
+GameKit.Window.setMinSize(640, 480)
+GameKit.Window.setVSync(1)
+
+if GameKit.Window.isFullscreen() then
+    GameKit.Window.toggleFullscreen()
+end
+</code></pre>
+
+  <div class="callout callout-note">
+    <div class="callout-title">GameKit.app already configures the window</div>
+    <p><code>GameKit.app({ title = ..., width = ..., height = ..., resizable = ..., vsync = ... })</code> calls <code>Window.setMode</code> and <code>Window.setTitle</code> on startup. Use <code>GameKit.Window</code> only for runtime changes.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT GUI
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-gui">
+  <h1>GameKit.GUI<a class="anchor" href="#gamekit-gui">§</a></h1>
+
+  <p>Retained-mode GUI toolkit. Buttons, checkboxes, text inputs, sliders, dropdowns, radio groups, progress bars, containers, scrolling, tooltips, keyboard focus, and themes.</p>
+
+  <h2 id="gui-create">Creating a UI<a class="anchor" href="#gui-create">§</a></h2>
+
+  <pre><code class="language-lua">local ui = GameKit.GUI.new({
+    x = 20,
+    y = 20,
+    w = 240,
+    padding = 10,
+    spacing = 6,
+})
+</code></pre>
+
+  <h2 id="gui-widgets">Widgets<a class="anchor" href="#gui-widgets">§</a></h2>
+
+  <pre><code class="language-lua">ui:label("Score: 0")
+ui:separator()
+ui:button("Restart", function() reset() end)
+ui:checkbox("Mute", false, function(checked: boolean)
+    GameKit.audio.setMasterVolume(checked and 0 or 1)
+end)
+ui:radio("Windowed", true, function() end, { group = "mode" })
+ui:radio("Fullscreen", false, function() end, { group = "mode" })
+ui:textinput("", function(text: string) print(text) end, { placeholder = "name" })
+ui:slider(50, 0, 100, function(v: number) print(v) end, { label = "volume" })
+ui:progressbar(0.5)
+ui:dropdown({
+    items = { "Easy", "Normal", "Hard" },
+    selected = 2,
+    callback = function(index: integer, label: string) print(label) end,
+})
+</code></pre>
+
+  <h2 id="gui-auto-attach">Auto-attach with GameKit.app<a class="anchor" href="#gui-auto-attach">§</a></h2>
+
+  <pre><code class="language-lua">local ui = GameKit.GUI.new({ x = 20, y = 20, w = 240 })
+ui:label("Hello")
+
+GameKit.app({ gui = ui })
+-- mouse, keyboard, wheel, textinput, and rendering are wired automatically
+</code></pre>
+
+  <p>Without <code>GameKit.app</code>, wire manually:</p>
+
+  <pre><code class="language-lua">GameKit.LoveGUI.attach(ui)
+
+function love.update(dt)
+    ui:update(dt)
+    local mx, my = love.mouse.getPosition()
+    ui:mousemoved(mx, my)
+end
+
+function love.draw()
+    ui:draw(renderer)
+end
+</code></pre>
+
+  <h2 id="gui-containers">Containers and scrolling<a class="anchor" href="#gui-containers">§</a></h2>
+
+  <pre><code class="language-lua">local panel = ui:container({ height = 200, scrollable = true })
+panel:label("Item 1")
+panel:label("Item 2")
+panel:button("Item 3", function() end)
+</code></pre>
+
+  <p>Containers clip their contents and handle mouse wheel scrolling when <code>scrollable = true</code>.</p>
+
+  <h2 id="gui-keyboard">Keyboard navigation<a class="anchor" href="#gui-keyboard">§</a></h2>
+
+  <ul>
+    <li><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> — move focus</li>
+    <li><kbd>Enter</kbd> / <kbd>Space</kbd> — activate focused widget</li>
+    <li><kbd>Arrow keys</kbd> — adjust sliders, move through radio groups, navigate dropdowns</li>
+    <li><kbd>Escape</kbd> — close dropdowns / unfocus</li>
+  </ul>
+
+  <h2 id="gui-themes">Themes<a class="anchor" href="#gui-themes">§</a></h2>
+
+  <pre><code class="language-lua">ui:setTheme({
+    accent = { 0.95, 0.45, 0.25, 1 },
+    background = { 0.06, 0.06, 0.09, 1 },
+})
+
+-- Or start with a built-in palette:
+local ui = GameKit.GUI.new({ theme = GameKit.GUI.themes.light })
+</code></pre>
+
+  <h2 id="gui-tooltips">Tooltips<a class="anchor" href="#gui-tooltips">§</a></h2>
+
+  <pre><code class="language-lua">ui:setTooltip(button, "Start a new game", 0.5)
+</code></pre>
+
+  <p>The second argument is a per-widget delay override (seconds).</p>
+</section>
+
+<!-- ============================================================
+     CHAPTER: GAMEKIT DOCK
+     ============================================================ -->
+<section class="chapter" id="chapter-gamekit-dock">
+  <h1>GameKit.Dock<a class="anchor" href="#gamekit-dock">§</a></h1>
+
+  <p>Dockable panel manager for editors and tools. Panels can be dragged by title bar, resized from a bottom-right grip, collapsed, and placed in <code>left</code> / <code>right</code> / <code>top</code> / <code>bottom</code> / <code>float</code> zones.</p>
+
+  <h2 id="dock-api">API<a class="anchor" href="#dock-api">§</a></h2>
+
+  <div class="api-sig">local dock = GameKit.Dock.new({ x?, y?, width?, height? })
+
+dock:add(id, { title?, width?, height?, x?, y?, dock?, content?, onClose?, onFocus? })
+dock:get(id): Panel?
+dock:remove(id): boolean
+dock:setBounds(x, y, w, h)
+dock:resize(w, h)
+dock:setDock(panel_or_id, zone)
+dock:setVisible(panel_or_id, visible)
+dock:toggleCollapsed(panel_or_id): boolean
+dock:layout()
+dock:draw(renderer)
+dock:mousepressed(x, y, button)
+dock:mousemoved(x, y, dx, dy)
+dock:mousereleased(x, y, button)
+dock:keypressed(key)
+dock:releaseAll()</div>
+
+  <h2 id="dock-usage">Usage<a class="anchor" href="#dock-usage">§</a></h2>
+
+  <pre><code class="language-lua">local dock = GameKit.Dock.new({ x = 16, y = 16, width = 1200, height = 680 })
+local renderer = GameKit.LoveGUI.new()
+
+local inspector = GameKit.GUI.new({ width = 280 })
+inspector:label("Inspector")
+inspector:button("Build", function() print("Build!") end)
+
+dock:add("inspector", {
+    title = "Inspector",
+    x = 24, y = 24,
+    width = 300, height = 400,
+    content = inspector,
+})
+
+dock:add("scene", {
+    title = "Scene",
+    dock = "left",
+    width = 240,
+})
+
+local detach = GameKit.LoveGUI.attach(dock)
+function love.draw() dock:draw(renderer) end
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: PACKAGING OVERVIEW
+     ============================================================ -->
+<section class="chapter" id="chapter-packaging-overview">
+  <h1>Packaging Overview<a class="anchor" href="#packaging-overview">§</a></h1>
+
+  <p><code>tpp bundle</code> produces a <code>.love</code> file and a launcher. <code>tpp package</code> wraps that <code>.love</code> into a platform-specific distributable.</p>
+
+  <h2 id="packaging-pipeline">Pipeline<a class="anchor" href="#packaging-pipeline">§</a></h2>
+
+  <pre><code class="language-text">  main.tpp
+     │
+     ▼
+  build/&lt;name&gt;.love     ← zip of main.lua + assets + gamekit
+     │
+     ├──→ linux   → dist/&lt;name&gt;-linux.tar.gz     (run.sh + .love [+ love binary])
+     ├──→ windows → dist/&lt;name&gt;-windows.zip      (love.exe + .love + fused .exe)
+     ├──→ macos   → dist/&lt;name&gt;-macos.tar.gz     (&lt;name&gt;.app + .love)
+     └──→ web     → dist/&lt;name&gt;-web.tar.gz       (love.js player + game.data)
+</code></pre>
+
+  <h2 id="packaging-naming">Artifact naming<a class="anchor" href="#packaging-naming">§</a></h2>
+
+  <p>By default the artifact name is derived from the source filename: <code>examples/showcase/main.tpp</code> → <code>main-linux</code>, <code>main-windows</code>, etc.</p>
+
+  <p>Pass <code>--name &lt;name&gt;</code> to use a different name:</p>
+
+  <pre><code class="language-bash">tpp package examples/showcase/main.tpp --target linux --name showcase
+# → dist/showcase-linux.tar.gz
+</code></pre>
+
+  <h2 id="packaging-love-bin">The <code>--love-bin</code> flag<a class="anchor" href="#packaging-love-bin">§</a></h2>
+
+  <p>Controls whether LÖVE is bundled with the game:</p>
+
+  <table>
+    <thead><tr><th>Target</th><th><code>--love-bin</code> value</th></tr></thead>
+    <tbody>
+      <tr><td>linux</td><td>Path to the <code>love</code> binary</td></tr>
+      <tr><td>windows</td><td>Path to a directory containing <code>love.exe</code> and its DLLs</td></tr>
+      <tr><td>macos</td><td>Path to <code>love.app</code></td></tr>
+      <tr><td>web</td><td>Path to <code>love.js.zip</code> (defaults to repo root)</td></tr>
+    </tbody>
+  </table>
+
+  <p>Without <code>--love-bin</code>, the artifact ships only the <code>.love</code> file and expects the user to have LÖVE installed.</p>
+</section>
+
+<!-- ============================================================
+     CHAPTER: PACKAGING LINUX
+     ============================================================ -->
+<section class="chapter" id="chapter-packaging-linux">
+  <h1>Linux Packaging<a class="anchor" href="#packaging-linux">§</a></h1>
+
+  <pre><code class="language-bash">tpp package main.tpp --target linux
+# → dist/main-linux.tar.gz  (~20 KB)
+</code></pre>
+
+  <p>With LÖVE bundled:</p>
+
+  <pre><code class="language-bash">tpp package main.tpp --target linux --love-bin "$(command -v love)"
+# → dist/main-linux.tar.gz  (~2 MB)
+</code></pre>
+
+  <h2 id="linux-contents">Contents<a class="anchor" href="#linux-contents">§</a></h2>
+
+  <pre><code class="language-text">main-linux/
+├── main.love          ← the game (zip)
+├── love               ← (only with --love-bin)
+├── run.sh             ← launcher (executable)
+└── README.txt         ← (only without --love-bin)
+</code></pre>
+
+  <h2 id="linux-testing">Testing<a class="anchor" href="#linux-testing">§</a></h2>
+
+  <pre><code class="language-bash">mkdir -p /tmp/test
+tar -xzf dist/main-linux.tar.gz -C /tmp/test
+cd /tmp/test/main-linux && ./run.sh
+</code></pre>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">Wrapper scripts</div>
+    <p>If <code>command -v love</code> returns a shell wrapper (not the ELF binary), the package will fail on machines where the wrapper's target doesn't exist. Use <code>readlink -f "$(command -v love)"</code> to resolve to the real binary.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     CHAPTER: PACKAGING WINDOWS
+     ============================================================ -->
+<section class="chapter" id="chapter-packaging-windows">
+  <h1>Windows Packaging<a class="anchor" href="#packaging-windows">§</a></h1>
+
+  <pre><code class="language-bash">tpp package main.tpp --target windows --love-bin ~/love-11.4-win64
+# → dist/main-windows.zip
+</code></pre>
+
+  <p><code>--love-bin</code> must point at a directory containing <code>love.exe</code> and its DLLs. Download the Windows LÖVE zip from <a href="https://love2d.org" target="_blank" rel="noopener">love2d.org</a> and extract it.</p>
+
+  <h2 id="windows-contents">Contents<a class="anchor" href="#windows-contents">§</a></h2>
+
+  <pre><code class="language-text">main-windows/
+├── main.exe           ← fused love.exe + game (double-click)
+├── main.love          ← the raw game (drag onto love.exe)
+├── love.exe
+├── SDL2.dll
+├── OpenAL32.dll
+├── …
+└── README.txt
+</code></pre>
+
+  <h2 id="windows-fusion">How fusion works<a class="anchor" href="#windows-fusion">§</a></h2>
+
+  <p><code>cat love.exe main.love > main.exe</code>. LÖVE's binary reads the appended zip automatically. This is LÖVE's standard distribution mechanism — no external tooling beyond <code>cat</code>.</p>
+
+  <p>Players unzip, double-click <code>main.exe</code>, and play. No install, no dependencies, no Teal++, no Lua, no LÖVE.</p>
+
+  <h2 id="windows-building">Building on Linux<a class="anchor" href="#windows-building">§</a></h2>
+
+  <p>You can produce a Windows <code>.exe</code> from Linux by passing the Windows LÖVE folder:</p>
+
+  <pre><code class="language-bash">wget https://github.com/love2d/love/releases/download/11.4/love-11.4-win64.zip
+unzip love-11.4-win64.zip -d ~/love-win64
+tpp package main.tpp --target windows --love-bin ~/love-win64
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: PACKAGING MACOS
+     ============================================================ -->
+<section class="chapter" id="chapter-packaging-macos">
+  <h1>macOS Packaging<a class="anchor" href="#packaging-macos">§</a></h1>
+
+  <pre><code class="language-bash">tpp package main.tpp --target macos --love-bin ~/love.app
+# → dist/main-macos.tar.gz
+</code></pre>
+
+  <h2 id="macos-contents">Contents<a class="anchor" href="#macos-contents">§</a></h2>
+
+  <pre><code class="language-text">main-macos/
+├── main.app/
+│   └── Contents/
+│       ├── MacOS/love
+│       ├── Resources/
+│       │   └── main.love
+│       └── Info.plist
+├── main.love
+└── README.txt
+</code></pre>
+
+  <h2 id="macos-codesign">Codesigning and notarization<a class="anchor" href="#macos-codesign">§</a></h2>
+
+  <p>The pipeline produces an <strong>unsigned</strong> <code>.app</code>. For distribution:</p>
+
+  <pre><code class="language-bash">codesign --deep --force --sign \
+    "Developer ID Application: Your Name (TEAMID)" main.app
+
+ditto -c -k --keepParent main.app main.zip
+xcrun notarytool submit main.zip --wait \
+    --apple-id you@example.com \
+    --password &lt;app-specific-password&gt; \
+    --team-id TEAMID
+
+xcrun stapler staple main.app
+</code></pre>
+
+  <p>For local testing on your own Mac, unsigned <code>.app</code> bundles usually launch. Users who download them see a Gatekeeper warning until notarized.</p>
+</section>
+
+<!-- ============================================================
+     CHAPTER: PACKAGING WEB
+     ============================================================ -->
+<section class="chapter" id="chapter-packaging-web">
+  <h1>Web Packaging (love.js) <span class="badge new">new</span><a class="anchor" href="#packaging-web">§</a></h1>
+
+  <p><code>tpp package --target web</code> produces a browser-playable build using the prebuilt <a href="https://github.com/Davidobot/love.js" target="_blank" rel="noopener">love.js</a> player bundled as <code>love.js.zip</code> at the repo root.</p>
+
+  <pre><code class="language-bash">tpp package main.tpp --target web
+# → dist/main-web.tar.gz
+</code></pre>
+
+  <h2 id="web-contents">Contents<a class="anchor" href="#web-contents">§</a></h2>
+
+  <pre><code class="language-text">main-web/
+├── index.html
+├── love.wasm
+├── love.js
+├── game.data        ← your compiled .love file
+└── README.txt
+</code></pre>
+
+  <h2 id="web-running">Running locally<a class="anchor" href="#web-running">§</a></h2>
+
+  <p>Web builds <strong>cannot</strong> be opened from <code>file://</code>. Serve them over HTTP:</p>
+
+  <pre><code class="language-bash">mkdir -p /tmp/web
+tar -xzf dist/main-web.tar.gz -C /tmp/web
+cd /tmp/web/main-web
+python3 -m http.server 8080
+# open http://localhost:8080
+</code></pre>
+
+  <h2 id="web-deploy">Deploying<a class="anchor" href="#web-deploy">§</a></h2>
+
+  <p>Upload every file in <code>main-web/</code> to any static host — itch.io, GitHub Pages, Netlify, Cloudflare Pages. The game itself is <code>game.data</code>; replace it to update the game without reuploading the player.</p>
+
+  <h2 id="web-headers">Compatibility mode<a class="anchor" href="#web-headers">§</a></h2>
+
+  <p>The bundled <code>love.js.zip</code> uses the compatibility build (no pthreads). This means:</p>
+
+  <ul>
+    <li>Audio may require a click on the canvas before playing (browser autoplay policy).</li>
+    <li>No COOP/COEP headers needed — works on itch.io and GitHub Pages out of the box.</li>
+  </ul>
+
+  <p>If you swap in a non-compatibility <code>love.js</code> build, add these headers to your server:</p>
+
+  <pre><code class="language-text">Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+</code></pre>
+
+  <h2 id="web-limits">Known limitations<a class="anchor" href="#web-limits">§</a></h2>
+
+  <ul>
+    <li>WebGL only; no Vulkan or Metal shaders.</li>
+    <li>Larger games take longer to load (<code>.wasm</code> + <code>.data</code> download).</li>
+    <li><code>love.filesystem</code> writes are not persisted (browser sandbox). Use <code>localStorage</code> for saves.</li>
+    <li>Audio may be slightly delayed in compatibility mode.</li>
+  </ul>
+</section>
+
+<!-- ============================================================
+     CHAPTER: EXAMPLES
+     ============================================================ -->
+<section class="chapter" id="chapter-examples">
+  <h1>Examples<a class="anchor" href="#examples">§</a></h1>
+
+  <p>The repo ships seven runnable examples. All compile clean with <code>tl check</code> and run on LÖVE 11+.</p>
+
+  <table>
+    <thead><tr><th>Path</th><th>What it demonstrates</th></tr></thead>
+    <tbody>
+      <tr><td><code>examples/hello/main.tpp</code></td><td>10 lines. Window + circle. The minimum viable Teal++ game.</td></tr>
+      <tr><td><code>examples/gui/main.tpp</code></td><td>GUI auto-wiring — buttons, checkbox, live counter, animated canvas.</td></tr>
+      <tr><td><code>examples/showcase/main.tpp</code></td><td>Movement, action input, timers, GUI, audio, sprite rendering, mouse tracking.</td></tr>
+      <tr><td><code>examples/neon_survivor/main.tpp</code></td><td>Full arcade survival game: auto-fire targeting, waves, particles, difficulty dropdown.</td></tr>
+      <tr><td><code>examples/dataclass/main.tpp</code></td><td>Data classes with <code>__tostring</code>, <code>__eq</code>, <code>copy</code>, and a custom method.</td></tr>
+      <tr><td><code>examples/tealpp/main.tpp</code></td><td>Starter template — copy this to start a new project.</td></tr>
+      <tr><td><code>examples/love/</code></td><td>Direct LÖVE demos (no <code>.tpp</code> compile step). Tests GameKit standalone.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="examples-running">Running any example<a class="anchor" href="#examples-running">§</a></h2>
+
+  <pre><code class="language-bash">tpp love examples/showcase/main.tpp
+tpp love examples/gui/main.tpp
+tpp love examples/dataclass/main.tpp
+</code></pre>
+
+  <h2 id="examples-dataclass">Data class example<a class="anchor" href="#examples-dataclass">§</a></h2>
+
+  <pre><code class="language-lua">import gamekit as GameKit
+
+data class Point(x: number, y: number)
+    public dist(other: Point): number
+        local dx = self.x - other.x
+        local dy = self.y - other.y
+        return math.sqrt(dx * dx + dy * dy)
+    end
+
+    public scale(factor: number): Point
+        return Point.new(self.x * factor, self.y * factor)
+    end
+end
+
+local p1 = Point.new(3, 4)
+local p2 = Point.new(3, 4)
+local origin = Point.new(0, 0)
+
+print(p1)                    -- Point(x=3, y=4)
+print(p1 == p2)              -- true
+print(p1 == origin)          -- false
+print(p1:dist(origin))       -- 5.0
+print(p1:copy() == p1)       -- true
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: TROUBLESHOOTING
+     ============================================================ -->
+<section class="chapter" id="chapter-troubleshooting">
+  <h1>Troubleshooting<a class="anchor" href="#troubleshooting">§</a></h1>
+
+  <h2 id="trouble-load">"GameKit.app: error in load callback"<a class="anchor" href="#trouble-load">§</a></h2>
+
+  <p>You have a global function named after a Lua builtin (<code>load</code>, <code>print</code>, <code>error</code>, <code>pcall</code>). <code>GameKit.app</code>'s dispatcher guards against this — it snapshots <code>_G</code> at load time and only dispatches to functions whose value has <em>changed</em> since the snapshot. If you see this error, you've probably shadowed a builtin somewhere else.</p>
+
+  <p>Rename your callback or check for accidental globals.</p>
+
+  <h2 id="trouble-modes">"functions need an explicit 'local' or 'global' annotation"<a class="anchor" href="#trouble-modes">§</a></h2>
+
+  <p>You have <code>function foo()</code> at top level in a Teal file. Add <code>global</code>:</p>
+
+  <pre><code class="language-lua">global function foo() end
+</code></pre>
+
+  <p>Or move it inside a <code>local</code> scope. This is Teal's safety rule — no implicit globals.</p>
+
+  <h2 id="trouble-index-bool">"cannot index key 'X' in variable 'GameKit' of type boolean"<a class="anchor" href="#trouble-index-bool">§</a></h2>
+
+  <p><code>gamekit.d.tl</code> failed to parse, so Teal treats <code>require("gamekit")</code> as returning <code>boolean</code>. Scroll up in the check output — there's a real syntax error earlier in <code>gamekit.d.tl</code>. Fix that and the boolean errors vanish.</p>
+
+  <h2 id="trouble-int">"in assignment: got number, expected integer"<a class="anchor" href="#trouble-int">§</a></h2>
+
+  <p><code>local n = 0</code> infers <code>integer</code>. <code>n + dt</code> is <code>number</code>. Assigning back fails. Use <code>local n = 0.0</code>.</p>
+
+  <h2 id="trouble-union">"cannot index key 'x' in variable 'target' of type Enemy | nil"<a class="anchor" href="#trouble-union">§</a></h2>
+
+  <p>Teal didn't narrow after <code>if not target then return end</code>. Cast after the guard:</p>
+
+  <pre><code class="language-lua">if not target then return end
+local enemy = target as Enemy
+print(enemy.x)
+</code></pre>
+
+  <h2 id="trouble-staged">Staged GameKit copy is stale<a class="anchor" href="#trouble-staged">§</a></h2>
+
+  <p><code>tpp love</code> copies <code>gamekit/</code> into the project directory only if it doesn't exist. After editing <code>gamekit/</code>:</p>
+
+  <pre><code class="language-bash">rm -rf examples/my_game/gamekit examples/my_game/gamekit.d.tl
+tpp love examples/my_game/main.tpp
+</code></pre>
+
+  <h2 id="trouble-web">Web build shows a blank page<a class="anchor" href="#trouble-web">§</a></h2>
+
+  <ol>
+    <li>Open browser devtools → Network. Look for a failed <code>.wasm</code> request (404 = missing file).</li>
+    <li>Console tab. Look for <code>game.data not found</code> or WebGL errors.</li>
+    <li>Confirm you're serving over HTTP, not <code>file://</code>.</li>
+    <li>Confirm <code>game.data</code> is present in the served directory.</li>
+  </ol>
+
+  <h2 id="trouble-appimage">AppImage won't run<a class="anchor" href="#trouble-appimage">§</a></h2>
+
+  <pre><code class="language-bash">chmod +x tealpp-*.AppImage
+./tealpp-*.AppImage --help
+</code></pre>
+
+  <p>If <code>--help</code> works, the AppImage is fine — the problem is in your game code or LÖVE install.</p>
+
+  <h2 id="trouble-uninstall">Accidentally hid system Lua<a class="anchor" href="#trouble-uninstall">§</a></h2>
+
+  <p>If you ran <code>sudo mv /usr/local/bin/lua /tmp/lua.bak</code> during a self-containment test and the restore failed (read-only <code>/usr</code> on Fedora Atomic / Bazzite):</p>
+
+  <pre><code class="language-bash">sudo mv /tmp/lua.bak /usr/local/bin/lua
+sudo chmod +x /usr/local/bin/lua
+lua -v
+</code></pre>
+
+  <p>Safer test for AppImage self-containment without touching system files:</p>
+
+  <pre><code class="language-bash">env PATH=/usr/bin:/bin ./tealpp-*.AppImage --help
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: API REFERENCE
+     ============================================================ -->
+<section class="chapter" id="chapter-api-reference">
+  <h1>API Quick Reference<a class="anchor" href="#api-reference">§</a></h1>
+
+  <h2 id="api-app">GameKit.app<a class="anchor" href="#api-app">§</a></h2>
+
+  <pre><code class="language-lua">GameKit.app({
+    title, width, height, resizable, vsync,
+    background, clearOnDraw,
+    gui, gui_draw, gui_renderer, on_error,
+    load, update, draw,
+    keypressed, keyreleased,
+    mousepressed, mousereleased, mousemoved, wheelmoved,
+    textinput, resize, focus, quit,
+}) → AppHandle
+
+app:onError(fn)
+app:stop()
+</code></pre>
+
+  <h2 id="api-graphics">GameKit.graphics<a class="anchor" href="#api-graphics">§</a></h2>
+
+  <pre><code class="language-lua">clear(color?)          setColor(color)
+circle(mode, x, y, r, color?, seg?)
+rectangle(mode, x, y, w, h, color?)
+line(x1, y1, x2, y2, color?)
+print(text, x?, y?, color?)
+image(img, x, y, r?, sx?, sy?)
+polygon(mode, color, ...)
+ellipse(mode, x, y, rx, ry, color?, seg?)
+arc(mode, x, y, r, a1, a2, color?, seg?)
+getDimensions() → w, h
+setFont(font)          setLineWidth(w)
+push()                 pop()
+translate(x, y)        scale(sx, sy?)
+rotate(r)              reset()
+raw() → love.graphics
+</code></pre>
+
+  <h2 id="api-assets">GameKit.assets<a class="anchor" href="#api-assets">§</a></h2>
+
+  <pre><code class="language-lua">image(path) → Image?
+font(path_or_size, size?) → Font?
+sound(path) → Source?
+music(path) → Source?
+clear()
+</code></pre>
+
+  <h2 id="api-audio">GameKit.audio<a class="anchor" href="#api-audio">§</a></h2>
+
+  <pre><code class="language-lua">play(sound, volume?, pitch?) → Source?
+playMusic(sound, volume?)
+stopMusic()            stopAll()
+setMasterVolume(v)
+fadeIn(source, duration, target?)
+fadeOut(source, duration, on_complete?)
+update(dt)
+</code></pre>
+
+  <h2 id="api-input">GameKit.Input<a class="anchor" href="#api-input">§</a></h2>
+
+  <pre><code class="language-lua">bind(action, ...sources)
+unbind(action)
+down(action) → boolean
+pressed(action) → boolean
+released(action) → boolean
+mousePosition() → x, y
+mouseDown(button?) → boolean
+releaseAll()           reset()
+</code></pre>
+
+  <h2 id="api-timer">GameKit.Timer<a class="anchor" href="#api-timer">§</a></h2>
+
+  <pre><code class="language-lua">after(delay, callback) → id
+every(interval, callback, repetitions?) → id
+cancel(id) → boolean
+clear()                update(dt)
+</code></pre>
+
+  <h2 id="api-scene">GameKit.Scene<a class="anchor" href="#api-scene">§</a></h2>
+
+  <pre><code class="language-lua">switch(next_scene?)
+current() → any
+update(dt)             draw(...)
+reset()
+</code></pre>
+
+  <h2 id="api-gui">GameKit.GUI<a class="anchor" href="#api-gui">§</a></h2>
+
+  <pre><code class="language-lua">GUI.new(options) → UI
+GUI.themes.dark, GUI.themes.light
+
+ui:label(text, options?)
+ui:separator(options?)
+ui:button(text, callback?, options?)
+ui:checkbox(text, checked, callback?, options?)
+ui:textinput(text, callback?, options?)
+ui:radio(text, selected, callback?, options?)
+ui:dropdown(options?)
+ui:slider(value, min, max, callback?, options?)
+ui:progressbar(value, options?)
+ui:container(options?)
+ui:setValue(widget, value, silent?)
+ui:setEnabled(widget, enabled)
+ui:setTheme(theme)     ui:getTheme() → theme
+ui:setTooltip(widget, text, delay?)
+ui:update(dt)          ui:draw(renderer)
+ui:mousemoved(x, y)
+ui:mousepressed(x, y, button)
+ui:mousereleased(x, y, button)
+ui:keypressed(key)
+ui:handleTextInput(text)
+ui:wheelmoved(x, y)
+ui:releaseAll()
+ui:setBounds(x, y, w, h)
+ui:resize(w, h)
+</code></pre>
+
+  <h2 id="api-camera">GameKit.Camera<a class="anchor" href="#api-camera">§</a></h2>
+
+  <pre><code class="language-lua">Camera.new(options) → Camera2D
+
+cam:setPosition(x, y)
+cam:move(dx, dy)
+cam:setZoom(zoom, sx?, sy?)
+cam:zoomBy(factor, sx?, sy?)
+cam:setRotation(radians)
+cam:setViewport(x, y, w, h)
+cam:worldToScreen(x, y) → sx, sy
+cam:screenToWorld(x, y) → wx, wy
+cam:containsScreenPoint(x, y) → boolean
+cam:getVisibleWorldBounds() → x, y, w, h
+cam:attachLove()       cam:detachLove()
+</code></pre>
+
+  <h2 id="api-window">GameKit.Window<a class="anchor" href="#api-window">§</a></h2>
+
+  <pre><code class="language-lua">getSize() → w, h       setSize(w, h)
+setTitle(title)        setResizable(bool)
+setMinSize(w, h)
+setFullscreen(enabled, mode?)
+toggleFullscreen(mode?) → bool
+setBorderless(bool)
+isFullscreen() → bool
+setVSync(value)        configure(options)
+</code></pre>
+
+  <h2 id="api-dock">GameKit.Dock<a class="anchor" href="#api-dock">§</a></h2>
+
+  <pre><code class="language-lua">Dock.new(options) → Dock
+
+dock:add(id, options) → Panel
+dock:get(id) → Panel?
+dock:remove(id) → boolean
+dock:setBounds(x, y, w, h)
+dock:resize(w, h)
+dock:setDock(panel_or_id, zone)
+dock:setVisible(panel_or_id, visible)
+dock:toggleCollapsed(panel_or_id) → boolean
+dock:layout()
+dock:draw(renderer)
+dock:mousepressed(x, y, button)
+dock:mousemoved(x, y, dx, dy)
+dock:mousereleased(x, y, button)
+dock:keypressed(key)
+dock:releaseAll()
+</code></pre>
+
+  <h2 id="api-errors">GameKit.errors<a class="anchor" href="#api-errors">§</a></h2>
+
+  <pre><code class="language-lua">traceback(err) → string
+guard(fn, on_error?, label?) → function
+fail(msg)
+assert(cond, msg?) → any
+</code></pre>
+</section>
+
+<!-- ============================================================
+     CHAPTER: COMPATIBILITY
+     ============================================================ -->
+<section class="chapter" id="chapter-compatibility">
+  <h1>Compatibility Notes<a class="anchor" href="#compatibility">§</a></h1>
+
+  <h2 id="compat-teal">Teal versions<a class="anchor" href="#compat-teal">§</a></h2>
+
+  <p>Teal++'s generated <code>.tl</code> is checked by whichever <code>tl</code> binary you have installed. Some Teal versions vary in:</p>
+
+  <ul>
+    <li><strong>Optional record fields.</strong> <code>field?: type</code> fails to parse on some versions. Teal++ avoids this by typing config-style records as <code>any</code>.</li>
+    <li><strong>Union narrowing.</strong> <code>if not x then return end; x.field</code> sometimes fails to narrow. Workaround: cast with <code>as</code>.</li>
+    <li><strong>Integer vs number.</strong> Consistent across versions: <code>0</code> is integer, <code>0.0</code> is number.</li>
+  </ul>
+
+  <p>The bundled AppImage ships <strong>tl 0.24.8</strong>. If you install <code>tl</code> via luarocks, any version from 0.20+ should work.</p>
+
+  <h2 id="compat-love">LÖVE versions<a class="anchor" href="#compat-love">§</a></h2>
+
+  <table>
+    <thead><tr><th>LÖVE</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>11.4</td><td>Tested — recommended</td></tr>
+      <tr><td>11.3</td><td>Works</td></tr>
+      <tr><td>12.x</td><td>Not tested; API is mostly unchanged</td></tr>
+      <tr><td>0.10.x</td><td>Not supported</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="compat-platforms">Platforms<a class="anchor" href="#compat-platforms">§</a></h2>
+
+  <table>
+    <thead><tr><th>Platform</th><th>Dev toolchain</th><th>Game distribution</th></tr></thead>
+    <tbody>
+      <tr><td>Linux x86_64</td><td>AppImage or source install</td><td><code>.love</code>, <code>.tar.gz</code></td></tr>
+      <tr><td>Windows 10/11</td><td>PowerShell installer or Git Bash</td><td><code>.zip</code> with fused <code>.exe</code></td></tr>
+      <tr><td>macOS 11+</td><td>Source install via <code>install.sh</code></td><td><code>.app</code> (unsigned; notarize separately)</td></tr>
+      <tr><td>Web (browsers)</td><td>Same Linux/macOS toolchain</td><td><code>love.js</code> player + <code>game.data</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="compat-known">Known limitations<a class="anchor" href="#compat-known">§</a></h2>
+
+  <ul>
+    <li><strong>No joystick / gamepad / touch dispatch.</strong> Keyboard and mouse are fully wired. Controller support is future work.</li>
+    <li><strong>No <code>love.filesystem</code> persistence on web.</strong> Browser sandbox; use <code>localStorage</code>.</li>
+    <li><strong>No save-file system.</strong> Games write their own; TGK provides no serialization layer.</li>
+    <li><strong>No cross-compilation.</strong> <code>tpp package --target windows</code> requires the Windows LÖVE folder. <code>--target macos</code> requires <code>love.app</code>.</li>
+    <li><strong>Windows packaging requires POSIX tools</strong> (<code>zip</code>, <code>tar</code>, <code>cat</code>, <code>cp</code>). Use WSL or Git Bash. This affects only the packaging step, not games.</li>
+  </ul>
+
+  <h2 id="compat-next">What's next<a class="anchor" href="#compat-next">§</a></h2>
+
+  <p>Not promised, not scheduled, but on the roadmap:</p>
+
+  <ul>
+    <li>Bundled LÖVE in the AppImage so <code>tpp love</code> works on a bare system with zero system dependencies.</li>
+    <li><code>GameKit.Sprite</code>, <code>GameKit.Collision</code>, <code>GameKit.Save</code> — the pieces games end up hand-rolling.</li>
+    <li>Controller dispatch through <code>GameKit.app</code>.</li>
+    <li><code>tpp init</code> — scaffold a new project in one command.</li>
+    <li>GitHub Actions — build the AppImage and Windows installer on tag push.</li>
+    <li>AppImageHub submission.</li>
+  </ul>
+</section>
+
+  </main>
+
+  <footer class="content" style="padding-top: 0;">
+    <div class="page-nav" id="page-nav"></div>
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   CHAPTER DATA — order determines prev/next nav
+   ============================================================ */
+const CHAPTERS = [
+  { id: 'introduction',        title: 'Introduction',        part: 'Part I — Teal++ Language' },
+  { id: 'installation',        title: 'Installation',        part: 'Part I — Teal++ Language' },
+  { id: 'hello-world',         title: 'Hello, World',        part: 'Part I — Teal++ Language' },
+  { id: 'program-mode',        title: 'Program Mode',        part: 'Part I — Teal++ Language' },
+  { id: 'class-mode',          title: 'Class Mode',          part: 'Part I — Teal++ Language' },
+  { id: 'data-classes',        title: 'Data Classes',        part: 'Part I — Teal++ Language' },
+  { id: 'imports',             title: 'Imports',             part: 'Part I — Teal++ Language' },
+  { id: 'type-annotations',    title: 'Type Annotations',    part: 'Part I — Teal++ Language' },
+  { id: 'cli-overview',        title: 'CLI Overview',        part: 'Part I — Teal++ Language' },
+  { id: 'cli-build',           title: 'build / check / run', part: 'Part I — Teal++ Language' },
+  { id: 'cli-love',            title: 'love',                part: 'Part I — Teal++ Language' },
+  { id: 'cli-bundle',          title: 'bundle / package',    part: 'Part I — Teal++ Language' },
+  { id: 'cli-test',            title: 'test / uninstall',    part: 'Part I — Teal++ Language' },
+  { id: 'gamekit-app',         title: 'GameKit.app',         part: 'Part II — TGK Framework' },
+  { id: 'gamekit-graphics',    title: 'GameKit.graphics',    part: 'Part II — TGK Framework' },
+  { id: 'gamekit-assets',      title: 'GameKit.assets',      part: 'Part II — TGK Framework' },
+  { id: 'gamekit-audio',       title: 'GameKit.audio',       part: 'Part II — TGK Framework' },
+  { id: 'gamekit-errors',      title: 'GameKit.errors',      part: 'Part II — TGK Framework' },
+  { id: 'gamekit-input',       title: 'GameKit.Input',       part: 'Part II — TGK Framework' },
+  { id: 'gamekit-timer',       title: 'GameKit.Timer',       part: 'Part II — TGK Framework' },
+  { id: 'gamekit-scene',       title: 'GameKit.Scene',       part: 'Part II — TGK Framework' },
+  { id: 'gamekit-camera',      title: 'GameKit.Camera',      part: 'Part II — TGK Framework' },
+  { id: 'gamekit-window',      title: 'GameKit.Window',      part: 'Part II — TGK Framework' },
+  { id: 'gamekit-gui',         title: 'GameKit.GUI',         part: 'Part II — TGK Framework' },
+  { id: 'gamekit-dock',        title: 'GameKit.Dock',        part: 'Part II — TGK Framework' },
+  { id: 'packaging-overview',  title: 'Overview',            part: 'Part III — Packaging' },
+  { id: 'packaging-linux',     title: 'Linux',               part: 'Part III — Packaging' },
+  { id: 'packaging-windows',   title: 'Windows',             part: 'Part III — Packaging' },
+  { id: 'packaging-macos',     title: 'macOS',               part: 'Part III — Packaging' },
+  { id: 'packaging-web',       title: 'Web (love.js)',       part: 'Part III — Packaging' },
+  { id: 'examples',            title: 'Examples',            part: 'Part IV — Reference' },
+  { id: 'troubleshooting',     title: 'Troubleshooting',     part: 'Part IV — Reference' },
+  { id: 'api-reference',       title: 'API Quick Reference', part: 'Part IV — Reference' },
+  { id: 'compatibility',       title: 'Compatibility Notes', part: 'Part IV — Reference' },
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let currentChapter = 'introduction';
+
+/* ============================================================
+   CHAPTER SWITCHING
+   ============================================================ */
+function showChapter(id) {
+  const chapter = CHAPTERS.find(c => c.id === id);
+  if (!chapter) return;
+
+  // Hide all, show target
+  document.querySelectorAll('.chapter').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById('chapter-' + id);
+  if (!target) return;
+  target.classList.add('active');
+  currentChapter = id;
+
+  // Update sidebar active
+  document.querySelectorAll('.nav-link').forEach(el => {
+    el.classList.toggle('active', el.dataset.chapter === id);
+  });
+
+  // Update breadcrumb
+  document.getElementById('breadcrumb').innerHTML =
+    chapter.part + ' · <strong>' + chapter.title + '</strong>';
+
+  // Prev/next
+  renderPageNav(chapter);
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  // Update hash without triggering scroll
+  history.replaceState(null, '', '#' + id);
+
+  // Close sidebar on mobile
+  closeSidebar();
+
+  // Highlight code
+  if (window.hljs) {
+    target.querySelectorAll('pre code').forEach(block => {
+      hljs.highlightElement(block);
+    });
+  }
+
+  // Add copy buttons
+  target.querySelectorAll('pre').forEach(addCopyButton);
+}
+
+/* ============================================================
+   PAGE NAV (prev / next)
+   ============================================================ */
+function renderPageNav(chapter) {
+  const idx = CHAPTERS.indexOf(chapter);
+  const prev = CHAPTERS[idx - 1];
+  const next = CHAPTERS[idx + 1];
+  const nav = document.getElementById('page-nav');
+  nav.innerHTML = '';
+
+  if (prev) {
+    const a = document.createElement('a');
+    a.href = '#' + prev.id;
+    a.onclick = (e) => { e.preventDefault(); showChapter(prev.id); };
+    a.innerHTML = '<div class="label">← Previous</div><div class="title">' + prev.title + '</div>';
+    nav.appendChild(a);
+  } else {
+    nav.appendChild(document.createElement('div'));
+  }
+
+  if (next) {
+    const a = document.createElement('a');
+    a.href = '#' + next.id;
+    a.className = 'next';
+    a.onclick = (e) => { e.preventDefault(); showChapter(next.id); };
+    a.innerHTML = '<div class="label">Next →</div><div class="title">' + next.title + '</div>';
+    nav.appendChild(a);
+  }
+}
+
+/* ============================================================
+   COPY BUTTON
+   ============================================================ */
+function addCopyButton(pre) {
+  if (pre.querySelector('.copy-btn')) return;
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.onclick = () => {
+    const code = pre.querySelector('code');
+    if (!code) return;
+    navigator.clipboard.writeText(code.textContent).then(() => {
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 1500);
+    });
+  };
+  pre.appendChild(btn);
+}
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('tpp-theme', next);
+  document.getElementById('theme-toggle').textContent =
+    next === 'dark' ? '☀️ Light' : '🌙 Dark';
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem('tpp-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-toggle').textContent =
+    theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function toggleGroup(el) {
+  el.parentElement.classList.toggle('collapsed');
+}
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const text = link.textContent.toLowerCase();
+    link.style.display = !q || text.includes(q) ? '' : 'none';
+  });
+  // Expand all groups while searching
+  if (q) {
+    document.querySelectorAll('.nav-group').forEach(g => g.classList.remove('collapsed'));
+  }
+});
+
+/* ============================================================
+   HASH ROUTING
+   ============================================================ */
+function routeFromHash() {
+  const hash = window.location.hash.replace('#', '');
+  if (hash && CHAPTERS.find(c => c.id === hash)) {
+    showChapter(hash);
+  } else {
+    showChapter('introduction');
+  }
+}
+
+window.addEventListener('hashchange', routeFromHash);
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init() {
+  loadTheme();
+
+  // Attach click handlers to sidebar links
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      showChapter(link.dataset.chapter);
+    });
+  });
+
+  // Route from hash (or default)
+  routeFromHash();
+
+  // Highlight any code that was already visible
+  if (window.hljs) {
+    document.querySelectorAll('pre code').forEach(block => {
+      hljs.highlightElement(block);
+    });
+  }
+
+  // Add copy buttons to all pre
+  document.querySelectorAll('pre').forEach(addCopyButton);
+
+  // Keyboard: Ctrl/Cmd+K to focus search
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      document.getElementById('search').focus();
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>

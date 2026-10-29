@@ -13,6 +13,7 @@ Usage:
   tpp love <file.tpp> [options]        Build and launch a LÖVE project
   tpp bundle <file.tpp> [options]      Stage a distributable bundle directory
   tpp package <file.tpp> [options]     Produce a distributable artifact
+  tpp mode <file.tpp>                  Print detected mode (program|class)
   tpp test                             Run the Teal++ test suite
   tpp uninstall                        Remove the source install
 
@@ -192,7 +193,6 @@ end
 
 -- Flatten a directory that contains exactly one subdirectory: move that
 -- subdir's contents up one level and remove the now-empty subdir.
--- Returns true if anything was flattened.
 local function flatten_single_dir(path)
     local entries = {}
     local p = io.popen("ls -1A " .. quote(path) .. " 2>/dev/null")
@@ -221,9 +221,96 @@ if not ok then fail("cannot load compiler source: " .. tostring(transpiler)) end
 local commands = {
     build = true, check = true, run = true, love = true,
     bundle = true, package = true, test = true, uninstall = true,
+    mode = true,
 }
 local first = arg[1]
 if first == "--help" or first == "-h" then usage(); os.exit(0) end
+
+-- ------------------------------------------------------------------
+-- Detect the mode a source string would use, without compiling.
+-- Program indicators:
+--   * import … as …
+--   * data class …
+--   * class Name … end   (with trailing code, the extract-class path)
+--   * local X = require(…)
+--   * top-level assignment to a require
+-- Anything else defaults to class mode.
+-- ------------------------------------------------------------------
+local function detect_mode(source, forced)
+    if forced then return forced end
+
+    -- Any import line → program
+    if source:match("^%s*import%f[%W]")
+        or source:match("\n%s*import%f[%W]") then
+        return "program"
+    end
+
+    -- Any data class block → program
+    if source:match("^data%s+class%s+")
+        or source:match("\ndata%s+class%s+") then
+        return "program"
+    end
+
+    -- A class block followed by ANY code after its closing `end` → program.
+    -- Detect by finding the first `^class X` line, scanning for its closing
+    -- `end`, and checking whether anything non-blank/non-comment remains.
+    local lines = {}
+    for line in (source .. "\n"):gmatch("(.-)\n") do
+        lines[#lines + 1] = line
+    end
+    local i = 1
+    while i <= #lines do
+        if lines[i]:match("^%s*class%s+[%a_][%w_]*%s*$") then
+            -- Found a class start; scan to its matching end
+            local depth = 1
+            local j = i + 1
+            while j <= #lines and depth > 0 do
+                local s = lines[j]:match("^%s*(.-)%s*$")
+                if s == "end" then depth = depth - 1
+                elseif s:match("^public%s+[%a_][%w_]*%b()") then depth = depth + 1
+                elseif s:match("^private%s+[%a_][%w_]*%b()") then depth = depth + 1
+                elseif s:match("^constructor%(") then depth = depth + 1
+                end
+                j = j + 1
+            end
+            if depth == 0 then
+                -- Anything after j (past the closing end)?
+                for k = j, #lines do
+                    local s = lines[k]:match("^%s*(.-)%s*$")
+                    if s ~= "" and not s:match("^%-%-") then
+                        return "program"
+                    end
+                end
+                -- Class block, nothing after → class mode (single-class file)
+                return "class"
+            end
+        end
+        i = i + 1
+    end
+
+    -- No class declared at all: if there's top-level code, program;
+    -- if nothing, class.
+    for _, line in ipairs(lines) do
+        local s = line:match("^%s*(.-)%s*$")
+        if s ~= "" and not s:match("^%-%-") then
+            return "program"
+        end
+    end
+    return "class"
+end
+
+-- ------------------------------------------------------------------
+-- tpp mode <file> — report which mode would be used, without compiling.
+-- ------------------------------------------------------------------
+if first == "mode" then
+    local file = arg[2]
+    if not file or not file:match("%.tpp$") then
+        fail("usage: tpp mode <file.tpp>")
+    end
+    local src = read_file(file)
+    print(detect_mode(src, nil))
+    os.exit(0)
+end
 
 if first == "uninstall" then
     local uninstaller = ROOT .. "/uninstall.sh"
@@ -346,16 +433,11 @@ if not input then usage(); os.exit(1) end
 if not input:match("%.tpp$") then fail("input must end in .tpp: " .. input) end
 local source = read_file(input)
 
-local mode = force_mode
-if not mode then
-    if action == "legacy" then
-        mode = "class"
-    elseif source:match("^[^\n]*import%s+[%w_%.]+%s+as%s+[%w_]+")
-        or source:match("\n%s*import%s+[%w_%.]+%s+as%s+[%w_]+") then
-        mode = "program"
-    else
-        mode = "class"
-    end
+local mode
+if action == "legacy" and not force_mode then
+    mode = "class"
+else
+    mode = detect_mode(source, force_mode)
 end
 
 if (action == "bundle" or action == "package") and mode ~= "program" then
@@ -386,7 +468,11 @@ if lua_path == tl_path then
 end
 local lua_name = basename(lua_path)
 
-if mode == "program" then
+-- Only stage GameKit when the file actually imports it.
+if mode == "program" and (
+    source:match("import%s+gamekit%f[%W]")
+    or source:match("import%s+[%w_%.]*%.gamekit%f[%W]")
+) then
     ensure_gamekit(project_dir, action == "run" or action == "love")
 end
 
@@ -634,7 +720,6 @@ if action == "bundle" or action == "package" then
             fail("could not unzip " .. lovejs_zip)
         end
 
-        -- Handle zip that extracts into a single subdirectory (e.g. love.js/)
         flatten_single_dir(dist_pkg)
 
         if not exists(dist_pkg .. "/index.html") then
@@ -646,7 +731,6 @@ if action == "bundle" or action == "package" then
             fail("love.js.zip has no recognizable love.js runtime (love.wasm/love.js/player.js)")
         end
 
-        -- Drop the compiled game in as game.data
         local game_data = dist_pkg .. "/game.data"
         if exists(game_data) then rm_rf(game_data) end
         if not cp(love_path, game_data) then

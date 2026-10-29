@@ -456,13 +456,10 @@ function M.compile(source)
 end
 
 
--- Extract a `data class Name(...)` block starting at line `start`.
--- Returns the extracted block text and the line index AFTER the block's
--- terminating `end`.
-local function extract_data_class(lines, start)
-    -- Count of pending `end` tokens we still need. Starts at 1 for the
-    -- class itself. Each `public ... )` / `private ... )` / `constructor(`
-    -- line inside the body opens a new scope.
+-- Scan forward from `start` for the matching `end` of a class/data-class body.
+-- Depth tracking handles nested `public ... )` / `private ... )` / `constructor(`
+-- scopes. Returns the line index AFTER the closing `end`.
+local function find_class_end(lines, start)
     local depth = 1
     local i = start + 1
 
@@ -482,11 +479,50 @@ local function extract_data_class(lines, start)
         i = i + 1
     end
 
+    return depth, i
+end
+
+-- Extract a `data class Name(...)` block starting at line `start`.
+local function extract_data_class(lines, start)
+    local decl = trim(lines[start])
+    local after_paren = decl:match("%)%s*(.*)$") or ""
+
+    -- Single-line data class: `data class Name(params)` with nothing after `)`.
+    -- Accept both `data class Name(...)` and `data class Name(...)` + `end`.
+    if after_paren == "" then
+        local next_line = start + 1
+        if next_line <= #lines and trim(lines[next_line]) == "end" then
+            return decl, next_line + 1
+        end
+        return decl, start + 1
+    end
+
+    local depth, i = find_class_end(lines, start)
     if depth > 0 then
         fail("unterminated data class (missing 'end')", start)
     end
 
-    -- i is one past the final `end`
+    local block = {}
+    for j = start, i - 1 do
+        block[#block + 1] = lines[j]
+    end
+    return table.concat(block, "\n"), i
+end
+
+-- Extract a `class Name` block starting at line `start`.
+-- `class Foo` is always a single line; the body follows.
+local function extract_class(lines, start)
+    local decl = trim(lines[start])
+    local name = decl:match("^class%s+([%a_][%w_]*)")
+    if not name then
+        fail("invalid class declaration", start)
+    end
+
+    local depth, i = find_class_end(lines, start)
+    if depth > 0 then
+        fail("unterminated class (missing 'end')", start)
+    end
+
     local block = {}
     for j = start, i - 1 do
         block[#block + 1] = lines[j]
@@ -518,6 +554,13 @@ function M.compile_program(source)
 
         if stripped:match("^data%s+class%s+") then
             local block, next_i = extract_data_class(lines, i)
+            local compiled = M.compile(block .. "\n")
+            compiled = strip_module_boilerplate(compiled)
+            out[#out + 1] = compiled
+            i = next_i
+
+        elseif stripped:match("^class%f[%W]") then
+            local block, next_i = extract_class(lines, i)
             local compiled = M.compile(block .. "\n")
             compiled = strip_module_boilerplate(compiled)
             out[#out + 1] = compiled
