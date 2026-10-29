@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="608.57245" height="608.57031" viewBox="0 0 161.01813 161.01757">
+  <defs>
+    <linearGradient id="teal-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00cdd9"/>
+      <stop offset="1" stop-color="#007b85"/>
+    </linearGradient>
+  </defs>
+  <text x="0.093" y="126.65" font-family="DejaVu Sans, sans-serif" font-size="100" font-weight="700" fill="url(#teal-gradient)" style="white-space: pre; font-size: 136.1px;" transform="matrix(1.028338, 0, 0, 1.014271, -0.002635, -0.003809)">T</text>
+  <text x="57.677" y="95.474" font-family="DejaVu Sans, sans-serif" font-size="46" font-weight="700" letter-spacing="-3" fill="#e4eaf0" style="white-space: pre; font-size: 62.6px;" transform="matrix(0.864615, 0, 0, 0.852787, 10.696755, 15.888746)">++</text>
+</svg>
