@@ -169,14 +169,16 @@ end
 
 local function zip_dir_contents(src_dir, out_zip)
     if is_windows then
-        return command_ok('powershell -NoProfile -Command "Compress-Archive -Path \'' .. src_dir:gsub("/", "\\") .. '\\*\' -DestinationPath \'' .. abs(out_zip) .. '\' -Force"')
+        local script = "Compress-Archive -Path '" .. src_dir:gsub("/", "\\") .. "\\*' -DestinationPath '" .. abs(out_zip):gsub("/", "\\") .. "' -Force"
+        return command_ok('powershell -NoProfile -Command "' .. script .. '"')
     end
     return command_ok("cd " .. quote(src_dir) .. " && zip -r -q " .. quote(abs(out_zip)) .. " .")
 end
 
 local function zip_dir(dir_to_zip, out_zip)
     if is_windows then
-        return command_ok('powershell -NoProfile -Command "Compress-Archive -Path \'' .. dir_to_zip:gsub("/", "\\") .. '\' -DestinationPath \'' .. abs(out_zip) .. '\' -Force"')
+        local script = "Compress-Archive -Path '" .. dir_to_zip:gsub("/", "\\") .. "' -DestinationPath '" .. abs(out_zip):gsub("/", "\\") .. "' -Force"
+        return command_ok('powershell -NoProfile -Command "' .. script .. '"')
     end
     local parent, name = dir_name(dir_to_zip), basename(dir_to_zip)
     return command_ok("cd " .. quote(parent) .. " && zip -r -q " .. quote(abs(out_zip)) .. " " .. quote(name))
