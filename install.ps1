@@ -11,7 +11,7 @@
 #   .\install.ps1
 #
 # What it does:
-#   1. Verifies git, lua, tl, zip are available (helpful errors otherwise).
+#   1. Verifies/installs git; verifies lua (helpful errors otherwise).
 #   2. Clones the repo to a temp dir.
 #   3. Installs to $env:LOCALAPPDATA\tpp (or $TPP_INSTALL_DIR).
 #   4. Generates tpp.cmd + tpp.ps1 wrappers in %LOCALAPPDATA%\Microsoft\WindowsApps
@@ -51,7 +51,7 @@ function Write-Err  { param($m) Write-Host "[x] " -ForegroundColor Red -NoNewlin
 function Die        { param($m) Write-Err $m; exit 1 }
 
 # ============================================================
-# PREFLIGHT / DEPS
+# HELPERS
 # ============================================================
 
 function Test-Command {
@@ -59,8 +59,64 @@ function Test-Command {
     $null -ne (Get-Command $name -ErrorAction SilentlyContinue)
 }
 
+# Refresh PATH in this process from Machine + User scopes. Called after
+# installing a tool so we can find it without a new shell.
+function Update-SessionPath {
+    $machine = [System.Environment]::GetEnvironmentVariable("Path","Machine")
+    $user    = [System.Environment]::GetEnvironmentVariable("Path","User")
+    $parts = @()
+    if ($machine) { $parts += $machine }
+    if ($user)    { $parts += $user }
+    if ($parts.Count -gt 0) { $env:Path = ($parts -join ";") }
+}
+
+# ============================================================
+# PREFLIGHT / DEPS
+# ============================================================
+
+function Ensure-Git {
+    if (Test-Command "git") { return }
+
+    Write-Warn "git not found -- attempting to install automatically..."
+
+    $installed = $false
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        if (Test-Command "winget") {
+            Write-Log "Installing Git via winget (Git.Git)..."
+            & winget install --id Git.Git -e --source winget `
+                --accept-package-agreements --accept-source-agreements --silent 2>&1 | Out-Host
+            if ($LASTEXITCODE -eq 0) { $installed = $true }
+            Update-SessionPath
+        }
+
+        if (-not $installed -and (Test-Command "choco")) {
+            Write-Log "winget unavailable or failed; trying Chocolatey..."
+            & choco install git -y 2>&1 | Out-Host
+            if ($LASTEXITCODE -eq 0) { $installed = $true }
+            Update-SessionPath
+        }
+    } finally {
+        $ErrorActionPreference = $prevEAP
+    }
+
+    if (-not (Test-Command "git")) {
+        Write-Host ""
+        Write-Err "git is required but could not be installed automatically."
+        Write-Host "  Install it manually, then re-run this installer:"
+        Write-Host "    winget install Git.Git"
+        Write-Host "    -- or download from https://git-scm.com/download/win"
+        exit 1
+    }
+
+    Write-Ok "git installed: $((Get-Command git).Source)"
+}
+
 function Check-Deps {
     Write-Log "Checking dependencies..."
+
+    Ensure-Git
 
     $missing = @()
     foreach ($cmd in @("git", "lua")) {
@@ -115,10 +171,21 @@ function Fetch-Repo {
     New-Item -ItemType Directory -Path $script:TempDir -Force | Out-Null
 
     Write-Log "Cloning $TppGitRepo (branch: $TppGitBranch)..."
-    $clone = & git clone --depth 1 --branch $TppGitBranch $TppGitRepo $script:TempDir 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host $clone
-        Die "git clone failed. Check TPP_GIT_REPO and TPP_GIT_BRANCH."
+
+    # git writes progress to stderr; under $ErrorActionPreference='Stop'
+    # PowerShell turns that into NativeCommandError. Run it under
+    # 'Continue' so the real $LASTEXITCODE is what we check.
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & git clone --depth 1 --branch $TppGitBranch $TppGitRepo $script:TempDir 2>&1 | Out-Host
+        $cloneExit = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prevEAP
+    }
+
+    if ($cloneExit -ne 0 -or -not (Test-Path (Join-Path $script:TempDir ".git"))) {
+        Die "git clone failed (exit $cloneExit). Check TPP_GIT_REPO and TPP_GIT_BRANCH."
     }
 
     $mustExist = @(
