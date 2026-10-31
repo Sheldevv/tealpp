@@ -176,7 +176,15 @@ local function script_root()
     return bin_dir:gsub("/bin$", "")
 end
 
-local ROOT = script_root()
+local function resolve_root()
+    local env_root = os.getenv("TPP_PREFIX")
+    if env_root and env_root ~= "" then
+        return env_root:gsub("\\", "/")
+    end
+    return script_root()
+end
+
+local ROOT = resolve_root()
 
 local function ensure_gamekit(project_dir, with_runtime)
     local gamekit_source = ROOT .. "/gamekit"
