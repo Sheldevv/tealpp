@@ -1,4 +1,4 @@
-#!/usr/bin/env lua
+﻿#!/usr/bin/env lua
 -- Teal++ command-line driver.
 
 local function usage()
@@ -12,7 +12,7 @@ Usage:
   tpp build <file.tpp> [options]       Compile a program or class automatically
   tpp check <file.tpp> [options]       Compile and type-check a program
   tpp run <file.tpp> [options]         Build and run a plain Lua program
-  tpp love <file.tpp> [options]        Build and launch a LÖVE project
+  tpp love <file.tpp> [options]        Build and launch a LÃ–VE project
   tpp bundle <file.tpp> [options]      Stage a distributable bundle directory
   tpp package <file.tpp> [options]     Produce a distributable artifact
   tpp mode <file.tpp>                  Print detected mode (program|class)
@@ -27,7 +27,7 @@ Options:
   --no-check            Skip `tl check` during build
   --name <name>         Artifact name (default: input filename stem)
   --target <os>         linux | windows | macos | web (required for package)
-  --love-bin <path>     LÖVE binary (linux) or directory (windows, macos);
+  --love-bin <path>     LÃ–VE binary (linux) or directory (windows, macos);
                         love.js.zip path for web
   -h, --help            Show this help
 
@@ -192,128 +192,7 @@ local function tar_gz_dir(dir_to_tar, out_tgz)
     return command_ok("tar -czf " .. quote(abs(out_tgz)) .. " -C " .. quote(parent) .. " " .. quote(name))
 end
 
-local function quote(value)
-    return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
-end
-
-local function exists(path)
-    local f = io.open(path, "r")
-    if f then f:close(); return true end
-    return false
-end
-
-local function is_file(path)
-    local f = io.open(path, "rb")
-    if f then f:close(); return true end
-    return false
-end
-
-local function read_file(path)
-    local f, err = io.open(path, "r")
-    if not f then fail("cannot open " .. path .. ": " .. tostring(err)) end
-    local value = f:read("*a")
-    f:close()
-    return value
-end
-
-local function write_file(path, value)
-    local f, err = io.open(path, "w")
-    if not f then fail("cannot write " .. path .. ": " .. tostring(err)) end
-    f:write(value)
-    if value:sub(-1) ~= "\n" then f:write("\n") end
-    f:close()
-end
-
-local function write_executable(path, value)
-    write_file(path, value)
-    os.execute("chmod +x " .. quote(path) .. " 2>/dev/null")
-end
-
-local function command_ok(command)
-    io.stdout:write("+ " .. command .. "\n")
-    local a, b, c = os.execute(command)
-    if a == true or a == 0 then return true end
-    if b == "exit" and c == 0 then return true end
-    return false
-end
-
-local function has_command(name)
-    local a, b, c = os.execute("command -v " .. quote(name) .. " >/dev/null 2>&1")
-    return a == true or a == 0 or (b == "exit" and c == 0)
-end
-
-local function stem(path)
-    return (path:gsub("%.tpp$", ""))
-end
-
-local function dir_name(path)
-    local dir = path:match("^(.*)/[^/]*$")
-    if not dir or dir == "" then return "." end
-    return dir
-end
-
-local function basename(path)
-    return path:match("([^/]+)$") or path
-end
-
-local function directory_exists(path)
-    local a, b, c = os.execute("test -d " .. quote(path) .. " >/dev/null 2>&1")
-    return a == true or a == 0 or (b == "exit" and c == 0)
-end
-
 local CWD_CACHE = nil
-local function get_cwd()
-    if CWD_CACHE then return CWD_CACHE end
-    local p = io.popen("pwd -P")
-    local cwd = p:read("*l")
-    p:close()
-    CWD_CACHE = cwd
-    return cwd
-end
-
-local function abs(path)
-    if path:sub(1, 1) == "/" then return path end
-    path = path:gsub("^%./", "")
-    if path == "." then return get_cwd() end
-    return get_cwd() .. "/" .. path
-end
-
-local function mkdir_p(path)
-    return command_ok("mkdir -p " .. quote(path))
-end
-
-local function rm_rf(path)
-    return command_ok("rm -rf " .. quote(path))
-end
-
-local function cp(src, dst)
-    return command_ok("cp " .. quote(src) .. " " .. quote(dst))
-end
-
-local function cp_r(src, dst)
-    return command_ok("cp -R " .. quote(src) .. " " .. quote(dst))
-end
-
-local function cp_r_contents(src_dir, dst_dir)
-    return command_ok("cp -R " .. quote(src_dir .. "/.") .. " " .. quote(dst_dir))
-end
-
-local function zip_dir_contents(src_dir, out_zip)
-    return command_ok("cd " .. quote(src_dir) .. " && zip -r -q " .. quote(abs(out_zip)) .. " .")
-end
-
-local function zip_dir(dir_to_zip, out_zip)
-    local parent = dir_name(dir_to_zip)
-    local name = basename(dir_to_zip)
-    return command_ok("cd " .. quote(parent) .. " && zip -r -q " .. quote(abs(out_zip)) .. " " .. quote(name))
-end
-
-local function tar_gz_dir(dir_to_tar, out_tgz)
-    local parent = dir_name(dir_to_tar)
-    local name = basename(dir_to_tar)
-    return command_ok("tar -czf " .. quote(abs(out_tgz)) .. " -C " .. quote(parent) .. " " .. quote(name))
-end
-
 local function script_root()
     local script = arg[0] or "bin/tpp"
     script = script:gsub("\\", "/")
@@ -368,6 +247,18 @@ local function flatten_single_dir(path)
     return true
 end
 
+local function find_love()
+    if is_windows then
+        local candidates = {
+            'C:/Program Files/LOVE/love.exe',
+            'C:/Program Files (x86)/LOVE/love.exe',
+        }
+        for _, c in ipairs(candidates) do
+            if is_file(c) then return c end
+        end
+    end
+    return nil
+end
 local transpiler_path = ROOT .. "/src/tpp.lua"
 local ok, transpiler = pcall(dofile, transpiler_path)
 if not ok then
@@ -528,29 +419,29 @@ if first == "--help" or first == "-h" then usage(); os.exit(0) end
 -- ------------------------------------------------------------------
 -- Detect the mode a source string would use, without compiling.
 -- Program indicators:
---   * import … as …
---   * data class …
---   * class Name … end   (with trailing code, the extract-class path)
---   * local X = require(…)
+--   * import â€¦ as â€¦
+--   * data class â€¦
+--   * class Name â€¦ end   (with trailing code, the extract-class path)
+--   * local X = require(â€¦)
 --   * top-level assignment to a require
 -- Anything else defaults to class mode.
 -- ------------------------------------------------------------------
 local function detect_mode(source, forced)
     if forced then return forced end
 
-    -- Any import line → program
+    -- Any import line â†’ program
     if source:match("^%s*import%f[%W]")
         or source:match("\n%s*import%f[%W]") then
         return "program"
     end
 
-    -- Any data class block → program
+    -- Any data class block â†’ program
     if source:match("^data%s+class%s+")
         or source:match("\ndata%s+class%s+") then
         return "program"
     end
 
-    -- A class block followed by ANY code after its closing `end` → program.
+    -- A class block followed by ANY code after its closing `end` â†’ program.
     -- Detect by finding the first `^class X` line, scanning for its closing
     -- `end`, and checking whether anything non-blank/non-comment remains.
     local lines = {}
@@ -580,7 +471,7 @@ local function detect_mode(source, forced)
                         return "program"
                     end
                 end
-                -- Class block, nothing after → class mode (single-class file)
+                -- Class block, nothing after â†’ class mode (single-class file)
                 return "class"
             end
         end
@@ -599,7 +490,7 @@ local function detect_mode(source, forced)
 end
 
 -- ------------------------------------------------------------------
--- tpp mode <file> — report which mode would be used, without compiling.
+-- tpp mode <file> â€” report which mode would be used, without compiling.
 -- ------------------------------------------------------------------
 if first == "mode" then
     local file = arg[2]
@@ -847,9 +738,9 @@ if action == "run" or action == "love" then
         if not run_in_project("lua " .. quote(lua_name)) then fail("program exited with an error") end
     else
         if lua_name ~= "main.lua" then
-            io.stderr:write("tpp: note: LÖVE expects main.lua; this source generates " .. lua_name .. "\n")
+            io.stderr:write("tpp: note: LÃ–VE expects main.lua; this source generates " .. lua_name .. "\n")
         end
-        if not command_ok("love " .. quote(project_dir)) then fail("LÖVE exited with an error") end
+        if not command_ok("love " .. quote(project_dir)) then fail("LÃ–VE exited with an error") end
     end
     os.exit(0)
 end
@@ -945,8 +836,8 @@ if action == "bundle" or action == "package" then
             write_executable(dist_pkg .. "/run.sh",
                 "#!/bin/sh\nexec love \"$(dirname \"$0\")/" .. name .. ".love\" \"$@\"\n")
             write_file(dist_pkg .. "/README.txt",
-                "This package does not bundle the LÖVE runtime.\n"
-                .. "Install LÖVE 11+ from https://love2d.org and run ./run.sh\n")
+                "This package does not bundle the LÃ–VE runtime.\n"
+                .. "Install LÃ–VE 11+ from https://love2d.org and run ./run.sh\n")
         end
 
         if exists(tgz) then rm_rf(tgz) end
@@ -970,7 +861,7 @@ if action == "bundle" or action == "package" then
                 fail("--love-bin directory must contain love.exe: " .. love_bin)
             end
             if not cp_r_contents(love_bin, dist_pkg) then
-                fail("could not copy LÖVE Windows runtime")
+                fail("could not copy LÃ–VE Windows runtime")
             end
             local fused = dist_pkg .. "/" .. name .. ".exe"
             if exists(fused) then rm_rf(fused) end
@@ -984,8 +875,8 @@ if action == "bundle" or action == "package" then
                 .. "Alternatively, drag " .. name .. ".love onto love.exe.\n")
         else
             write_file(dist_pkg .. "/README.txt",
-                "This package does not bundle the LÖVE runtime.\n"
-                .. "Download LÖVE 11+ for Windows from https://love2d.org and\n"
+                "This package does not bundle the LÃ–VE runtime.\n"
+                .. "Download LÃ–VE 11+ for Windows from https://love2d.org and\n"
                 .. "drag " .. name .. ".love onto love.exe, or pass --love-bin <dir>\n"
                 .. "where <dir> contains love.exe and its DLLs.\n")
         end
@@ -1031,8 +922,8 @@ if action == "bundle" or action == "package" then
                 .. "See PACKAGING.md for details.\n")
         else
             write_file(dist_pkg .. "/README.txt",
-                "This package does not bundle the LÖVE runtime.\n"
-                .. "Install LÖVE 11+ for macOS from https://love2d.org, then open "
+                "This package does not bundle the LÃ–VE runtime.\n"
+                .. "Install LÃ–VE 11+ for macOS from https://love2d.org, then open "
                 .. name .. ".love.\n"
                 .. "Or pass --love-bin ~/love.app to produce an unsigned .app bundle.\n")
         end
@@ -1084,11 +975,11 @@ if action == "bundle" or action == "package" then
         end
 
         write_file(dist_pkg .. "/README.txt",
-            "Web build of " .. name .. " — serve these files over HTTP.\n\n"
+            "Web build of " .. name .. " â€” serve these files over HTTP.\n\n"
             .. "Quick test:\n"
             .. "  python3 -m http.server 8080\n"
             .. "  # open http://localhost:8080\n\n"
-            .. "Cannot be opened from file:// — browsers block WebAssembly\n"
+            .. "Cannot be opened from file:// â€” browsers block WebAssembly\n"
             .. "loading for security reasons.\n\n"
             .. "Deploy: upload every file in this directory to any static host.\n"
             .. "The game itself is game.data. Replace it to swap games.\n\n"
@@ -1116,3 +1007,4 @@ if action == "bundle" or action == "package" then
 end
 
 fail("unsupported command " .. action)
+
