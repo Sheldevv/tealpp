@@ -46,6 +46,150 @@ local function fail(message, code)
     os.exit(code or 1)
 end
 
+local is_windows = package.config:sub(1,1) == "\\"
+
+local function quote(value)
+    local s = tostring(value)
+    if is_windows then return '"' .. s:gsub('"', '""') .. '"' end
+    return "'" .. s:gsub("'", "'\\''") .. "'"
+end
+
+local function exists(path)
+    local f = io.open(path, "r"); if f then f:close(); return true end; return false
+end
+
+local function is_file(path)
+    local f = io.open(path, "rb"); if f then f:close(); return true end; return false
+end
+
+local function read_file(path)
+    local f, err = io.open(path, "r")
+    if not f then fail("cannot open " .. path .. ": " .. tostring(err)) end
+    local v = f:read("*a"); f:close(); return v
+end
+
+local function write_file(path, value)
+    local f, err = io.open(path, "w")
+    if not f then fail("cannot write " .. path .. ": " .. tostring(err)) end
+    f:write(value); if value:sub(-1) ~= "\n" then f:write("\n") end; f:close()
+end
+
+local function write_executable(path, value)
+    write_file(path, value)
+    if not is_windows then os.execute("chmod +x " .. quote(path) .. " 2>/dev/null") end
+end
+
+local function command_ok(command)
+    io.stdout:write("+ " .. command .. "\n")
+    local a, b, c = os.execute(command)
+    if a == true or a == 0 then return true end
+    if b == "exit" and c == 0 then return true end
+    return false
+end
+
+local function has_command(name)
+    if is_windows then
+        local a, b, c = os.execute("where " .. name .. " >nul 2>nul")
+        return a == true or a == 0 or (b == "exit" and c == 0)
+    end
+    local a, b, c = os.execute("command -v " .. quote(name) .. " >/dev/null 2>&1")
+    return a == true or a == 0 or (b == "exit" and c == 0)
+end
+
+local function stem(path) return (path:gsub("%.tpp$", "")) end
+
+local function dir_name(path)
+    local dir = path:match("^(.*)[/\\][^/\\]*$")
+    if not dir or dir == "" then return "." end
+    return dir
+end
+
+local function basename(path) return path:match("([^/\\]+)$") or path end
+
+local function directory_exists(path)
+    if is_windows then
+        local a, b, c = os.execute('if exist "' .. path:gsub("/", "\\") .. '\\*" (exit /b 0) else (exit /b 1)')
+        return a == true or a == 0 or (b == "exit" and c == 0)
+    end
+    local a, b, c = os.execute("test -d " .. quote(path) .. " >/dev/null 2>&1")
+    return a == true or a == 0 or (b == "exit" and c == 0)
+end
+
+local CWD_CACHE = nil
+local function get_cwd()
+    if CWD_CACHE then return CWD_CACHE end
+    local p = io.popen(is_windows and "cd" or "pwd -P")
+    CWD_CACHE = p:read("*l"); p:close(); return CWD_CACHE
+end
+
+local function abs(path)
+    if path:match("^[/\\]") or path:match("^%a:[/\\]") then return path end
+    path = path:gsub("^%.[/\\]", "")
+    if path == "." then return get_cwd() end
+    return get_cwd() .. (is_windows and "\\" or "/") .. path
+end
+
+local function mkdir_p(path)
+    if is_windows then
+        local p = path:gsub("/", "\\")
+        return command_ok('if not exist "' .. p .. '" mkdir "' .. p .. '"') or directory_exists(path)
+    end
+    return command_ok("mkdir -p " .. quote(path))
+end
+
+local function rm_rf(path)
+    if is_windows then
+        local p = path:gsub("/", "\\")
+        os.execute('if exist "' .. p .. '\\*" (rmdir /S /Q "' .. p .. '") else (del /F /Q "' .. p .. '" 2>nul)')
+        return true
+    end
+    return command_ok("rm -rf " .. quote(path))
+end
+
+local function cp(src, dst)
+    if is_windows then
+        return command_ok('copy /Y "' .. src:gsub("/", "\\") .. '" "' .. dst:gsub("/", "\\") .. '" >nul')
+    end
+    return command_ok("cp " .. quote(src) .. " " .. quote(dst))
+end
+
+local function cp_r(src, dst)
+    if is_windows then
+        return command_ok('xcopy /E /I /Y /Q "' .. src:gsub("/", "\\") .. '" "' .. dst:gsub("/", "\\") .. '" >nul')
+    end
+    return command_ok("cp -R " .. quote(src) .. " " .. quote(dst))
+end
+
+local function cp_r_contents(src_dir, dst_dir)
+    if is_windows then
+        return command_ok('xcopy /E /I /Y /Q "' .. src_dir:gsub("/", "\\") .. '\\*" "' .. dst_dir:gsub("/", "\\") .. '" >nul')
+    end
+    return command_ok("cp -R " .. quote(src_dir .. "/.") .. " " .. quote(dst_dir))
+end
+
+local function zip_dir_contents(src_dir, out_zip)
+    if is_windows then
+        return command_ok('powershell -NoProfile -Command "Compress-Archive -Path \'' .. src_dir:gsub("/", "\\") .. '\\*\' -DestinationPath \'' .. abs(out_zip) .. '\' -Force"')
+    end
+    return command_ok("cd " .. quote(src_dir) .. " && zip -r -q " .. quote(abs(out_zip)) .. " .")
+end
+
+local function zip_dir(dir_to_zip, out_zip)
+    if is_windows then
+        return command_ok('powershell -NoProfile -Command "Compress-Archive -Path \'' .. dir_to_zip:gsub("/", "\\") .. '\' -DestinationPath \'' .. abs(out_zip) .. '\' -Force"')
+    end
+    local parent, name = dir_name(dir_to_zip), basename(dir_to_zip)
+    return command_ok("cd " .. quote(parent) .. " && zip -r -q " .. quote(abs(out_zip)) .. " " .. quote(name))
+end
+
+local function tar_gz_dir(dir_to_tar, out_tgz)
+    if is_windows then
+        return command_ok('tar -czf "' .. abs(out_tgz):gsub("/", "\\") .. '" -C "' .. dir_name(dir_to_tar):gsub("/", "\\") .. '" "' .. basename(dir_to_tar) .. '"')
+    end
+    local parent, name = dir_name(dir_to_tar), basename(dir_to_tar)
+    return command_ok("tar -czf " .. quote(abs(out_tgz)) .. " -C " .. quote(parent) .. " " .. quote(name))
+end
+
 local function quote(value)
     return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
 end
@@ -204,16 +348,17 @@ end
 -- Flatten a directory that contains exactly one subdirectory: move that
 -- subdir's contents up one level and remove the now-empty subdir.
 local function flatten_single_dir(path)
+    if is_windows then
+        return command_ok('powershell -NoProfile -Command "$p=\'' .. path:gsub("/", "\\") .. '\'; $i=Get-ChildItem -Force $p; if($i.Count -eq 1 -and $i[0].PSIsContainer){Get-ChildItem -Force $i[0].FullName|Move-Item -Destination $p; Remove-Item -Force $i[0].FullName}"')
+    end
     local entries = {}
     local p = io.popen("ls -1A " .. quote(path) .. " 2>/dev/null")
     if not p then return false end
     for line in p:lines() do entries[#entries + 1] = line end
     p:close()
-
     if #entries ~= 1 then return false end
     local inner = path .. "/" .. entries[1]
     if not directory_exists(inner) then return false end
-
     command_ok("mv " .. quote(inner) .. "/* " .. quote(path) .. "/ 2>/dev/null || true")
     command_ok("mv " .. quote(inner) .. "/.[!.]* " .. quote(path) .. "/ 2>/dev/null || true")
     command_ok("mv " .. quote(inner) .. "/..?* " .. quote(path) .. "/ 2>/dev/null || true")
@@ -224,9 +369,13 @@ end
 local transpiler_path = ROOT .. "/src/tpp.lua"
 local ok, transpiler = pcall(dofile, transpiler_path)
 if not ok then
-    ok, transpiler = pcall(dofile, "src/tpp.lua")
+    local first_err = transpiler
+    local ok2, result2 = pcall(dofile, "src/tpp.lua")
+    if ok2 then transpiler = result2
+    else fail("cannot load compiler source:\n  " .. transpiler_path .. " -> " .. tostring(first_err)
+              .. "\n  src/tpp.lua -> " .. tostring(result2) .. "\n  ROOT=" .. tostring(ROOT))
+    end
 end
-if not ok then fail("cannot load compiler source: " .. tostring(transpiler)) end
 
 local DEFAULT_TEALPP_JSON = [[
 {
