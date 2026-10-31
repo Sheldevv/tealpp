@@ -819,6 +819,11 @@ if action == "check" then
 end
 
 if action == "run" or action == "love" then
+    local love_exe = love_bin or find_love() or "love"
+    if not command_ok(quote(love_exe) .. " " .. quote(project_dir)) then
+        fail("LÖVE exited with an error (interpreter: " .. love_exe .. ")")
+    end
+    
     if action == "run" then
         local manifest = read_manifest()
         if manifest and manifest.target == "love" then
