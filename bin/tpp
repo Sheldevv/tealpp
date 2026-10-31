@@ -7,6 +7,8 @@ Teal++
 
 Usage:
   tpp <file.tpp> [options]             Compile a class-definition file (legacy)
+  tpp new <name>                       Scaffold a new Teal++ project
+  tpp init [--yes]                     Create tealpp.json in the current folder
   tpp build <file.tpp> [options]       Compile a program or class automatically
   tpp check <file.tpp> [options]       Compile and type-check a program
   tpp run <file.tpp> [options]         Build and run a plain Lua program
@@ -218,10 +220,135 @@ if not ok then
 end
 if not ok then fail("cannot load compiler source: " .. tostring(transpiler)) end
 
+local DEFAULT_TEALPP_JSON = [[
+{
+  "$schema": "https://tealpp.dev/schema/tealpp.json",
+  "name": "%s",
+  "version": "0.1.0",
+  "entry": "%s",
+  "include": ["%s"],
+  "out": "build/",
+  "target": "love"
+}
+]]
+
+local DEFAULT_MAIN_TPP = [[
+import gamekit as GameKit
+
+data class Player(x: number, y: number)
+end
+
+local player = Player.new(640, 360)
+
+GameKit.app({ title = "%s", width = 1280, height = 720 })
+
+function draw()
+    GameKit.graphics.clear("#0d1117")
+    GameKit.graphics.circle("fill", player.x, player.y, 24, "#22d3ee")
+end
+]]
+
+local DEFAULT_CONF_LUA = [[
+function love.conf(t)
+    t.identity = "%s"
+    t.version = "11.4"
+    t.window.title = "%s"
+    t.window.width = 1280
+    t.window.height = 720
+end
+]]
+
+local DEFAULT_GITIGNORE = "build/\ndist/\n*.love\n*.tl\n.tpp/\nnode_modules/\n.vscode/\n"
+
+local DEFAULT_README = [[
+# %s
+
+A Teal++ project.
+
+## Run
+    tpp run src/main.tpp
+
+## Build
+    tpp build src/main.tpp
+
+## Package
+    tpp package src/main.tpp --target linux
+]]
+
+local function validate_project_name(name)
+    if not name or name == "" then return "project name cannot be empty" end
+    if not name:match("^[A-Za-z_][%w_%-]*$") then
+        return "project name must start with a letter and contain only letters, digits, '_' or '-'"
+    end
+    return nil
+end
+
+local function command_new(project_name)
+    if not project_name then fail("usage: tpp new <name>") end
+    local err = validate_project_name(project_name)
+    if err then fail(err) end
+    if directory_exists(project_name) or is_file(project_name) then
+        fail("'" .. project_name .. "' already exists")
+    end
+    if not mkdir_p(project_name)
+        or not mkdir_p(project_name .. "/src")
+        or not mkdir_p(project_name .. "/assets") then
+        rm_rf(project_name)
+        fail("could not create project tree")
+    end
+    local decl = ROOT .. "/gamekit.d.tl"
+    if exists(decl) then cp(decl, project_name .. "/gamekit.d.tl") end
+    write_file(project_name .. "/tealpp.json",
+        DEFAULT_TEALPP_JSON:format(project_name, "src/main.tpp", "src/"))
+    write_file(project_name .. "/src/main.tpp", DEFAULT_MAIN_TPP:format(project_name))
+    write_file(project_name .. "/conf.lua", DEFAULT_CONF_LUA:format(project_name, project_name))
+    write_file(project_name .. "/.gitignore", DEFAULT_GITIGNORE)
+    write_file(project_name .. "/README.md", DEFAULT_README:format(project_name))
+    write_file(project_name .. "/assets/.gitkeep", "")
+    print("Created project: " .. project_name)
+    print("  cd " .. project_name)
+    print("  tpp run src/main.tpp")
+end
+
+local function command_init(assume_yes)
+    if exists("tealpp.json") then fail("tealpp.json already exists in this directory") end
+    local entry
+    for _, c in ipairs({"main.tpp", "src/main.tpp"}) do
+        if is_file(c) then entry = c; break end
+    end
+    if not entry then
+        local p = io.popen("find . -name '*.tpp' -not -path './.git/*' 2>/dev/null | head -n 50")
+        if p then
+            local lines = {}
+            for line in p:lines() do lines[#lines + 1] = line end
+            p:close()
+            for _, l in ipairs(lines) do
+                if l:match("^%.?/src/") then entry = l:gsub("^%./", ""); break end
+            end
+            if not entry and lines[1] then entry = lines[1]:gsub("^%./", "") end
+        end
+    end
+    if not entry then fail("no .tpp file found; run 'tpp new <name>'") end
+    local include_dir = entry:match("^(.*)/[^/]*$") or "."
+    local include_pattern = include_dir == "." and "." or (include_dir .. "/")
+    local content = DEFAULT_TEALPP_JSON:format(basename(get_cwd()), entry, include_pattern)
+    if not assume_yes then
+        io.stdout:write("Detected entry: " .. entry .. "\nInclude root: " .. include_pattern
+            .. "\n\nWill write tealpp.json:\n\n" .. content .. "\nProceed? [Y/n] ")
+        io.stdout:flush()
+        local a = (io.stdin:read("*l") or ""):match("^%s*(.-)%s*$")
+        if a ~= "" and a:lower() ~= "y" and a:lower() ~= "yes" then
+            print("Aborted."); os.exit(0)
+        end
+    end
+    write_file("tealpp.json", content)
+    print("Wrote tealpp.json (entry: " .. entry .. ")")
+end
+
 local commands = {
     build = true, check = true, run = true, love = true,
     bundle = true, package = true, test = true, uninstall = true,
-    mode = true,
+    mode = true, new = true, init = true,
 }
 local first = arg[1]
 if first == "--help" or first == "-h" then usage(); os.exit(0) end
@@ -309,6 +436,20 @@ if first == "mode" then
     end
     local src = read_file(file)
     print(detect_mode(src, nil))
+    os.exit(0)
+end
+
+if first == "new" then
+    command_new(arg[2])
+    os.exit(0)
+end
+
+if first == "init" then
+    local assume_yes = false
+    for i = 2, #arg do
+        if arg[i] == "--yes" or arg[i] == "-y" then assume_yes = true end
+    end
+    command_init(assume_yes)
     os.exit(0)
 end
 
