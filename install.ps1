@@ -11,11 +11,12 @@
 #   .\install.ps1
 #
 # What it does:
-#   1. Verifies/installs git; verifies lua (helpful errors otherwise).
+#   1. Verifies/installs git; verifies stock Lua (not a Teal/luarocks shim).
 #   2. Clones the repo to a temp dir.
 #   3. Installs to $env:LOCALAPPDATA\tpp (or $TPP_INSTALL_DIR).
-#   4. Generates tpp.cmd + tpp.ps1 wrappers in %LOCALAPPDATA%\Microsoft\WindowsApps
-#      (a directory that's already on PATH by default on Win10+).
+#   4. Generates tpp.cmd in %LOCALAPPDATA%\Microsoft\WindowsApps with the
+#      stock Lua path baked in. Removes any stale tpp.ps1 (which would
+#      otherwise take precedence over tpp.cmd in PowerShell).
 #   5. Verifies `tpp --help` runs.
 
 $ErrorActionPreference = "Stop"
@@ -85,6 +86,27 @@ function Invoke-NativeQuiet {
     }
 }
 
+# Find a stock Lua interpreter. Skips anything under %USERPROFILE%\.local\bin
+# (that's where luarocks/Teal shims live). Returns $null if none found.
+function Find-StockLua {
+    $candidates = @(
+        (Join-Path $env:LOCALAPPDATA "Programs\Lua\bin\lua.exe"),
+        "C:\Program Files\Lua\5.4\lua.exe",
+        "C:\Program Files (x86)\Lua\5.4\lua.exe",
+        "C:\Program Files\Lua\5.3\lua.exe",
+        "C:\Program Files (x86)\Lua\5.3\lua.exe"
+    )
+    foreach ($c in $candidates) {
+        if (Test-Path $c) { return $c }
+    }
+    # Fall back to whatever `lua` resolves to, but only if it's not a shim.
+    $cmd = Get-Command lua -ErrorAction SilentlyContinue
+    if ($cmd -and $cmd.Source -and ($cmd.Source -notmatch '\\\.local\\bin\\')) {
+        return $cmd.Source
+    }
+    return $null
+}
+
 # ============================================================
 # PREFLIGHT / DEPS
 # ============================================================
@@ -128,28 +150,59 @@ function Ensure-Git {
     Write-Ok "git installed: $((Get-Command git).Source)"
 }
 
+function Ensure-StockLua {
+    $stock = Find-StockLua
+    if ($stock) { return $stock }
+
+    Write-Warn "stock Lua not found -- attempting to install via winget..."
+    $installed = $false
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        if (Test-Command "winget") {
+            & winget install --id DEVCOM.Lua -e --source winget `
+                --accept-package-agreements --accept-source-agreements --silent 2>&1 | Out-Host
+            if ($LASTEXITCODE -eq 0) { $installed = $true }
+            Update-SessionPath
+        }
+    } finally {
+        $ErrorActionPreference = $prevEAP
+    }
+
+    if ($installed) {
+        $stock = Find-StockLua
+        if ($stock) {
+            Write-Ok "Lua installed: $stock"
+            return $stock
+        }
+    }
+
+    Write-Host ""
+    Write-Err "stock Lua is required but could not be installed automatically."
+    Write-Host "  Install it manually:"
+    Write-Host "    winget install DEVCOM.Lua"
+    Write-Host "  -- or download from https://luabinaries.sourceforge.net/"
+    Write-Host ""
+    Write-Host "  NOTE: do NOT use the 'lua' from a Teal / luarocks install"
+    Write-Host "        (typically under %USERPROFILE%\.local\bin). It enforces"
+    Write-Host "        Teal semantics and tpp's plain-Lua compiler will not load."
+    exit 1
+}
+
 function Check-Deps {
     Write-Log "Checking dependencies..."
 
     Ensure-Git
+    $script:StockLua = Ensure-StockLua
 
-    $missing = @()
-    foreach ($cmd in @("git", "lua")) {
-        if (-not (Test-Command $cmd)) { $missing += $cmd }
-    }
-
-    if ($missing.Count -gt 0) {
-        Write-Err ("Missing required tools: " + ($missing -join ", "))
+    # Warn if the ambient `lua` is a Teal/luarocks shim.
+    $ambient = Get-Command lua -ErrorAction SilentlyContinue
+    if ($ambient -and $ambient.Source -match '\\\.local\\bin\\lua\.exe$') {
+        Write-Warn "the 'lua' on PATH is a Teal/luarocks shim:"
+        Write-Host "    $($ambient.Source)"
+        Write-Host "    tpp will use stock Lua at: $script:StockLua"
+        Write-Host "    (this is fine; just don't try to run tpp-cli.lua with 'lua' directly)"
         Write-Host ""
-        Write-Host "  Install with winget:"
-        Write-Host "    winget install Git.Git"
-        Write-Host "    winget install DevCom.Lua"
-        Write-Host ""
-        Write-Host "  Or download manually:"
-        Write-Host "    git:  https://git-scm.com/download/win"
-        Write-Host "    lua:  https://github.com/rjpcomputing/luaforwindows/releases"
-        Write-Host ""
-        exit 1
     }
 
     $has_tl   = Test-Command "tl"
@@ -159,9 +212,9 @@ function Check-Deps {
     if (-not $has_tl -or -not $has_zip -or -not $has_love) {
         Write-Warn "Optional dependencies missing:"
         if (-not $has_tl) {
-            Write-Host "    tl    -- install with: luarocks install tl"
-            Write-Host "             (needs lua + luarocks + a C toolchain;"
-            Write-Host "              see https://github.com/teal-language/tl#installation)"
+            Write-Host "    tl    -- install with: winget install DEVCOM.Lua (includes luarocks)"
+            Write-Host "             then: luarocks install tl"
+            Write-Host "             see https://github.com/teal-language/tl#installation"
         }
         if (-not $has_zip) {
             Write-Host "    zip   -- install with: winget install 7zip.7zip"
@@ -242,28 +295,32 @@ function Install-Files {
         if (Test-Path $src) { Copy-Item -Force $src (Join-Path $TppInstallDir $f) }
     }
 
-    # Generate tpp.cmd (works in cmd.exe, PowerShell, double-click)
+    # Use single-quoted here-string so $ and % stay literal, then splice
+    # the resolved stock-Lua path in explicitly.
+    $stockLua = $script:StockLua
+    if (-not $stockLua) { Die "internal error: stock Lua path was not resolved" }
+
     $cmdPath = Join-Path $TppBinDir "tpp.cmd"
-    $cmdContent = @"
+    $cmdContent = @'
 @echo off
 setlocal
-if "%TPP_PREFIX%"=="" set "TPP_PREFIX=$TppInstallDir"
-lua "%TPP_PREFIX%\bin\tpp-cli.lua" %*
-"@
+if "%TPP_PREFIX%"=="" set "TPP_PREFIX=__PREFIX__"
+"__LUA__" "%TPP_PREFIX%\bin\tpp-cli.lua" %*
+'@
+    $cmdContent = $cmdContent.Replace('__PREFIX__', $TppInstallDir).Replace('__LUA__', $stockLua)
     Set-Content -Path $cmdPath -Value $cmdContent -Encoding ASCII
 
-    # Generate tpp.ps1 for PowerShell users who prefer it
-    $ps1Path = Join-Path $TppBinDir "tpp.ps1"
-    $ps1Content = @"
-#!/usr/bin/env pwsh
-`$ErrorActionPreference = "Stop"
-if (-not `$env:TPP_PREFIX) { `$env:TPP_PREFIX = "$TppInstallDir" }
-& lua "`$env:TPP_PREFIX\bin\tpp-cli.lua" @args
-exit `$LASTEXITCODE
-"@
-    Set-Content -Path $ps1Path -Value $ps1Content -Encoding UTF8
+    # Remove any stale tpp.ps1 from a previous install. PowerShell prefers
+    # .ps1 over .cmd, so a stale ps1 calling a bad Lua would silently win.
+    $stalePs1 = Join-Path $TppBinDir "tpp.ps1"
+    if (Test-Path $stalePs1) {
+        Remove-Item -Force $stalePs1
+        Write-Log "removed stale tpp.ps1 wrapper"
+    }
 
     Write-Ok "Files installed"
+    Write-Host "    wrapper: $cmdPath"
+    Write-Host "    lua:     $stockLua"
 }
 
 function Verify {
@@ -286,12 +343,7 @@ function Verify {
         Write-Host "  Diagnostic info:" -ForegroundColor Yellow
         Write-Host "    wrapper:  $cmd"
         Write-Host "    prefix:   $TppInstallDir"
-        $luaCmd = Get-Command lua -ErrorAction SilentlyContinue
-        if ($luaCmd) {
-            Write-Host "    lua:      $($luaCmd.Source)"
-        } else {
-            Write-Host "    lua:      (not found on PATH)"
-        }
+        Write-Host "    lua:      $script:StockLua"
         $cliPath = Join-Path $TppInstallDir "bin\tpp-cli.lua"
         $compPath = Join-Path $TppInstallDir "src\tpp.lua"
         Write-Host "    cli:      $cliPath  (exists: $(Test-Path $cliPath))"
