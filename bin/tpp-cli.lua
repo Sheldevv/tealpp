@@ -820,8 +820,15 @@ end
 
 if action == "run" or action == "love" then
     local love_exe = love_bin or find_love() or "love"
-    if not command_ok(quote(love_exe) .. " " .. quote(project_dir)) then
-        fail("LÖVE exited with an error (interpreter: " .. love_exe .. ")")
+    local cmd
+    if is_windows then
+        -- cmd.exe needs the whole thing wrapped again: cmd /c ""exe" "arg""
+        cmd = 'cmd /c ""' .. love_exe:gsub("/", "\\") .. '" "' .. project_dir:gsub("/", "\\") .. '""'
+    else
+        cmd = quote(love_exe) .. " " .. quote(project_dir)
+    end
+    if not command_ok(cmd) then
+        fail("LOVE exited with an error (interpreter: " .. love_exe .. ")")
     end
     
     if action == "run" then
