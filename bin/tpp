@@ -313,8 +313,10 @@ end
 local function command_init(assume_yes)
     if exists("tealpp.json") then fail("tealpp.json already exists in this directory") end
     local entry
-    for _, c in ipairs({"main.tpp", "src/main.tpp"}) do
-        if is_file(c) then entry = c; break end
+    for _, c in ipairs({ "main.tpp", "src/main.tpp" }) do
+        if is_file(c) then
+            entry = c; break
+        end
     end
     if not entry then
         local p = io.popen("find . -name '*.tpp' -not -path './.git/*' 2>/dev/null | head -n 50")
@@ -323,7 +325,9 @@ local function command_init(assume_yes)
             for line in p:lines() do lines[#lines + 1] = line end
             p:close()
             for _, l in ipairs(lines) do
-                if l:match("^%.?/src/") then entry = l:gsub("^%./", ""); break end
+                if l:match("^%.?/src/") then
+                    entry = l:gsub("^%./", ""); break
+                end
             end
             if not entry and lines[1] then entry = lines[1]:gsub("^%./", "") end
         end
@@ -343,6 +347,14 @@ local function command_init(assume_yes)
     end
     write_file("tealpp.json", content)
     print("Wrote tealpp.json (entry: " .. entry .. ")")
+end
+
+local function read_manifest()
+    if not exists("tealpp.json") then return nil end
+    local src = read_file("tealpp.json")
+    local entry = src:match('"entry"%s*:%s*"([^"]+)"')
+    if not entry then return nil end
+    return { entry = entry }
 end
 
 local commands = {
@@ -544,14 +556,18 @@ local force_mode, no_check = nil, false
 local artifact_name, package_target, love_bin
 while index <= #arg do
     local value = arg[index]
-    if value == "-h" or value == "--help" then usage(); os.exit(0)
+    if value == "-h" or value == "--help" then
+        usage(); os.exit(0)
     elseif value == "-o" or value == "--output" then
         index = index + 1
         output_path = arg[index]
         if not output_path then fail(value .. " requires a path") end
-    elseif value == "--program" then force_mode = "program"
-    elseif value == "--class" then force_mode = "class"
-    elseif value == "--no-check" then no_check = true
+    elseif value == "--program" then
+        force_mode = "program"
+    elseif value == "--class" then
+        force_mode = "class"
+    elseif value == "--no-check" then
+        no_check = true
     elseif value == "--name" then
         index = index + 1
         artifact_name = arg[index]
@@ -564,11 +580,24 @@ while index <= #arg do
         index = index + 1
         love_bin = arg[index]
         if not love_bin then fail("--love-bin requires a path") end
-    elseif value:sub(1, 1) == "-" then fail("unknown option " .. value .. "\nTry 'tpp --help'.")
-    elseif not input then input = value
-    else fail("unexpected argument " .. value .. "\nTry 'tpp --help'.") end
+    elseif value:sub(1, 1) == "-" then
+        fail("unknown option " .. value .. "\nTry 'tpp --help'.")
+    elseif not input then
+        input = value
+    else
+        fail("unexpected argument " .. value .. "\nTry 'tpp --help'.")
+    end
     index = index + 1
 end
+
+if not input and (action == "build" or action == "check" or action == "run"
+                  or action == "love" or action == "bundle" or action == "package") then
+    local manifest = read_manifest()
+    if manifest then input = manifest.entry end
+end
+
+if not input then usage(); os.exit(1) end
+if not input:match("%.tpp$") then fail("input must end in .tpp: " .. input) end
 
 if not input then usage(); os.exit(1) end
 if not input:match("%.tpp$") then fail("input must end in .tpp: " .. input) end
