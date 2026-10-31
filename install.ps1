@@ -70,6 +70,21 @@ function Update-SessionPath {
     if ($parts.Count -gt 0) { $env:Path = ($parts -join ";") }
 }
 
+# Run a native command through cmd.exe so its stderr never becomes a
+# PowerShell NativeCommandError. Returns output lines; sets $LASTEXITCODE.
+function Invoke-NativeQuiet {
+    param([string]$CommandLine, [switch]$Echo)
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $out = & cmd.exe /d /c $CommandLine 2>&1
+        if ($Echo) { $out | ForEach-Object { Write-Host "    $_" } }
+        return $out
+    } finally {
+        $ErrorActionPreference = $prevEAP
+    }
+}
+
 # ============================================================
 # PREFLIGHT / DEPS
 # ============================================================
@@ -172,19 +187,17 @@ function Fetch-Repo {
 
     Write-Log "Cloning $TppGitRepo (branch: $TppGitBranch)..."
 
-    # git writes progress to stderr; under $ErrorActionPreference='Stop'
-    # PowerShell turns that into NativeCommandError. Run it under
-    # 'Continue' so the real $LASTEXITCODE is what we check.
-    $prevEAP = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    try {
-        & git clone --depth 1 --branch $TppGitBranch $TppGitRepo $script:TempDir 2>&1 | Out-Host
-        $cloneExit = $LASTEXITCODE
-    } finally {
-        $ErrorActionPreference = $prevEAP
-    }
+    # Run git through cmd.exe so its stderr ("Cloning into ...") is never
+    # turned into a PowerShell NativeCommandError. Capture the exit code.
+    $gitCmd = 'git clone --depth 1 --branch "{0}" "{1}" "{2}"' -f `
+        $TppGitBranch, $TppGitRepo, $script:TempDir
+    $out = Invoke-NativeQuiet -CommandLine $gitCmd -Echo
+    $cloneExit = $LASTEXITCODE
 
     if ($cloneExit -ne 0 -or -not (Test-Path (Join-Path $script:TempDir ".git"))) {
+        Write-Host ""
+        Write-Host "  git output:" -ForegroundColor Yellow
+        $out | ForEach-Object { Write-Host "    $_" }
         Die "git clone failed (exit $cloneExit). Check TPP_GIT_REPO and TPP_GIT_BRANCH."
     }
 
@@ -256,9 +269,35 @@ exit `$LASTEXITCODE
 function Verify {
     Write-Log "Verifying..."
     $cmd = Join-Path $TppBinDir "tpp.cmd"
-    & cmd.exe /c "`"$cmd`" --help >NUL 2>NUL"
-    if ($LASTEXITCODE -ne 0) {
-        Die "installed tpp failed to run --help"
+    if (-not (Test-Path $cmd)) {
+        Die "wrapper not found: $cmd"
+    }
+
+    # Capture stdout+stderr so we can print it if it fails.
+    $output = Invoke-NativeQuiet -CommandLine "`"$cmd`" --help"
+    $verifyExit = $LASTEXITCODE
+
+    if ($verifyExit -ne 0) {
+        Write-Err "installed tpp failed to run --help (exit $verifyExit)"
+        Write-Host ""
+        Write-Host "  Output:" -ForegroundColor Yellow
+        $output | ForEach-Object { Write-Host "    $_" }
+        Write-Host ""
+        Write-Host "  Diagnostic info:" -ForegroundColor Yellow
+        Write-Host "    wrapper:  $cmd"
+        Write-Host "    prefix:   $TppInstallDir"
+        $luaCmd = Get-Command lua -ErrorAction SilentlyContinue
+        if ($luaCmd) {
+            Write-Host "    lua:      $($luaCmd.Source)"
+        } else {
+            Write-Host "    lua:      (not found on PATH)"
+        }
+        $cliPath = Join-Path $TppInstallDir "bin\tpp-cli.lua"
+        $compPath = Join-Path $TppInstallDir "src\tpp.lua"
+        Write-Host "    cli:      $cliPath  (exists: $(Test-Path $cliPath))"
+        Write-Host "    compiler: $compPath  (exists: $(Test-Path $compPath))"
+        Write-Host ""
+        Die "verification failed; see output above."
     }
     Write-Ok "tpp --help works"
 }
