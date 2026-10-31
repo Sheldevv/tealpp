@@ -352,9 +352,10 @@ end
 local function read_manifest()
     if not exists("tealpp.json") then return nil end
     local src = read_file("tealpp.json")
-    local entry = src:match('"entry"%s*:%s*"([^"]+)"')
-    if not entry then return nil end
-    return { entry = entry }
+    return {
+        entry  = src:match('"entry"%s*:%s*"([^"]+)"'),
+        target = src:match('"target"%s*:%s*"([^"]+)"'),
+    }
 end
 
 local commands = {
@@ -598,9 +599,6 @@ end
 
 if not input then usage(); os.exit(1) end
 if not input:match("%.tpp$") then fail("input must end in .tpp: " .. input) end
-
-if not input then usage(); os.exit(1) end
-if not input:match("%.tpp$") then fail("input must end in .tpp: " .. input) end
 local source = read_file(input)
 
 local mode
@@ -664,6 +662,13 @@ if action == "check" then
 end
 
 if action == "run" or action == "love" then
+    if action == "run" then
+        local manifest = read_manifest()
+        if manifest and manifest.target == "love" then
+            action = "love"
+        end
+    end
+
     if not no_check and not run_in_project("tl check " .. quote(tl_name)) then fail("Teal type-check failed") end
     if not run_in_project("tl gen " .. quote(tl_name)) then fail("Teal generation failed") end
     if not exists(lua_path) then fail("Teal did not produce expected output: " .. lua_path) end
