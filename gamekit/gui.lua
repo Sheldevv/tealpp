@@ -235,6 +235,7 @@ function UI:container(options)
         scrollable = options.scrollable == true,
         scroll_y = 0,
     })
+    child.parent_widget = widget
     child.w = widget.w
     child:layout()
     return child
@@ -467,6 +468,14 @@ function UI:setBounds(x, y, width, height)
     end
     self.x, self.y, self.w = x, y, width
     self.fixed_height = height
+
+    if self.parent_widget then
+        self.parent_widget.x = x
+        self.parent_widget.y = y
+        self.parent_widget.w = width
+        self.parent_widget.h = height or self.parent_widget.h
+    end
+
     self:layout()
     return self
 end
